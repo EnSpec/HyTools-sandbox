@@ -30,14 +30,11 @@ Python 3
 **Example:**
 
 Wanner, W., Li, X., & Strahler, A. H. (1995).
-
 On the derivation of kernels for kernel-driven models of bidirectional
 reflectance.
-
 Journal of Geophysical Research: Atmospheres, 100(D10), 21077-21089.
 
 \# Eq 32. Wanner et al. JGRA 1995
-
 kGeo = O - (1/np.cos(solZn\_)) - (1/np.cos(viewZn\_)) + .5\*(1+
 cosPhase\_)......
 
