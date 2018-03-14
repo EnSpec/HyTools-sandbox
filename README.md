@@ -20,12 +20,12 @@ Python 3
 
 2.  Use sphinx
 
-3.  At the beginning of each script/module include a comment block that
-    > clearly describes what the code does.
+3.  At the beginning of each script/module include a comment block 
+    that clearly describes what the code does.
 
-4.  For methods drawn from the literature include full references in
-    > beginning comment block and line by line references
-    > where appropriate.
+4.  For methods drawn from the literature include full references in 
+    beginning comment block and line by line references 
+    where appropriate.
 
 **Example:**
 
@@ -41,11 +41,11 @@ Journal of Geophysical Research: Atmospheres, 100(D10), 21077-21089.
 kGeo = O - (1/np.cos(solZn\_)) - (1/np.cos(viewZn\_)) + .5\*(1+
 cosPhase\_)......
 
-1.  Code should be able to run on both local machines and servers
-    > seamlessly, ie: consider memory limitations.
+5.  Code should be able to run on both local machines and servers
+    seamlessly, ie: consider memory limitations.
 
-2.  Leverage existing python libraries for processing data
-    > (GDAL, sklearn…...). Limit use of obscure or abandoned packages.
+6.  Leverage existing python libraries for processing data
+    (GDAL, sklearn…...). Limit use of obscure or abandoned packages.
 
 **Rules/Guidelines:**
 
