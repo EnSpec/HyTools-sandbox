@@ -32,9 +32,9 @@ Python 3
     reflectance.
     Journal of Geophysical Research: Atmospheres, 100(D10), 21077-21089.
 
-\# Eq 32. Wanner et al. JGRA 1995
-\kGeo = O - (1/np.cos(solZn\_)) - (1/np.cos(viewZn\_)) + .5\*(1+
-cosPhase\_)......
+``# Eq 32. Wanner et al. JGRA 1995``
+``kGeo = O - (1/np.cos(solZn\_)) - (1/np.cos(viewZn\_)) + .5\*(1+
+cosPhase\_)......``
 
 5.  Code should be able to run on both local machines and servers
     seamlessly, ie: consider memory limitations.
