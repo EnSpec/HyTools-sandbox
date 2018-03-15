@@ -18,10 +18,8 @@ workflow (ie. a command line script).
     -   [*http://docs.python-guide.org/en/latest/writing/style/*](http://docs.python-guide.org/en/latest/writing/style/)
 
 2.  Use sphinx for code documentations.
-
 3.  At the beginning of each script/module include a comment block 
     that clearly describes what the code does.
-
 4.  For methods drawn from the literature include full references in 
     beginning comment block and line by line references 
     where appropriate.
