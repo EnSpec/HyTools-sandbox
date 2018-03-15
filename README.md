@@ -25,21 +25,6 @@ workflow (ie. a command line script).
 4.  For methods drawn from the literature include full references in 
     beginning comment block and line by line references 
     where appropriate.
-
-    **Example:**
-	~~~
-	Wanner, W., Li, X., & Strahler, A. H. (1995).
-	On the derivation of kernels for kernel-driven models of bidirectional
-	reflectance.
-	Journal of Geophysical Research: Atmospheres, 100(D10), 21077-21089.
-	~~~~
-
-	~~~~
-	# Eq 32. Wanner et al. JGRA 1995
-	kGeo = O - (1/np.cos(solZn_)) - (1/np.cos(viewZn_)) + .5*(1+
-	cosPhase_)......
-	~~~~
-
 5.  Code should be able to run on both local machines and servers
     seamlessly, ie: consider memory limitations.
 6.  Leverage existing python libraries for processing data
