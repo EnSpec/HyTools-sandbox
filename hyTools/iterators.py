@@ -7,6 +7,8 @@ test_dir = '/projects/hyTools/HyTools-sandbox/test_data'
 enviBIP = "%s/test_subset_300x300_bip" % test_dir
 enviBIL = "%s/test_subset_300x300_bil" % test_dir
 enviBSQ = "%s/test_subset_300x300_bsq" % test_dir
+hdf = "%s/test_subset_300x300.h5" % test_dir
+
 
 # Test dataset dimensions
 lines = 300
