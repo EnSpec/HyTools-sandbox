@@ -1,7 +1,7 @@
 import numpy as np, os
 
 
-test_dir = '/projects/hyTools/HyTools-sandbox/test_data'
+test_dir = '/Users/adam/Dropbox/projects/hyTools/HyTools-sandbox/test_data'
 
 #ENVI test data
 enviBIP = "%s/test_subset_300x300_bip" % test_dir
@@ -26,7 +26,7 @@ def iter_ENVI(hyTools,by = "chunks",chunksize= "infer"):
     elif by == "chunks:
         iterator = envi_iter_chunks(hyTools,chunksize)
     else:
-        print "Iterator type not recognized."
+        print yIterator type not recognized."
         iterator = None
     
     return iterator
@@ -71,7 +71,7 @@ def envi_iter_lines(hyTools):
             yield dataArr[:,line,:]
         
     else:
-        print "Unknown or undefined interleave type."
+        print("Unknown or undefined interleave type.")
     
     
 def envi_iter_columns(hyTools):
@@ -95,7 +95,7 @@ def envi_iter_columns(hyTools):
             yield dataArr[:,:,column]
         
     else:
-        print "Unknown or undefined interleave type."
+        print("Unknown or undefined interleave type.")
         
     
     
@@ -120,53 +120,58 @@ def envi_iter_bands():
             yield dataArr[band,:,:]
         
     else:
-        print "Unknown or undefined interleave type."
+        print("Unknown or undefined interleave type.")
             
     
+
     
-    
-    
-def envi_iter_chunks():
-    """ Iterate through ENVI format file chunk by chunk.
+def envi_iter_chunks(yChunk,xChunk):
+    """ Iterate through ENVI format file chunk by chunk (lines x columns).
     
     """
     
     yChunk,xChunk,bChunk  = (100,100,426)
-
+    interleave = "bsq"
 
     if interleave == "bip":
         dataArr = np.memmap(enviBIP,dtype = np.int16, mode='r', shape = (lines,columns,bands))
-        
-        aIndex= np.arange(0,len(dataArr)).reshape(lines,columns)
-    
-        for y in range(lines/yChunk+1):
-            yStart = y*yChunk
-            yEnd = (y+1)*yChunk      
-            if yEnd >= lines:
-                yEnd = lines 
-            
-            for x in range(columns/xChunk+1):
-                xStart = x*xChunk
-                xEnd = (x+1)*xChunk
-                if xEnd >= columns:
-                    xEnd = columns 
-                    
-                sliceIdx = aIndex[yStart:yEnd,xStart:xEnd]
-                yield dataArr[sliceIdx,:].reshape(sliceIdx.shape[0],sliceIdx.shape[1],bChunk)
-    
-            
-
     elif interleave == "bil":
         dataArr = np.memmap(enviBIL,dtype = np.int16, mode='r', shape = (lines,bands,columns))
-        for band in bands:
-            yield dataArr[:,band,:] 
-    
     elif interleave == "bsq":
         dataArr = np.memmap(enviBSQ,dtype = np.int16, mode='r', shape = (bands,lines,columns))
-        for band in bands:
-            yield dataArr[band,:,:]
-        
     else:
-        print "Unknown or undefined interleave type."
+        print("Unknown or undefined interleave type.")
+        return
 
+ 
+    for y in range(int(lines/yChunk+1)):
+        yStart = y*yChunk
+        yEnd = (y+1)*yChunk      
+        if yEnd > lines:
+            yEnd = lines   
+        if yEnd == yStart:
+            continue
+                
+        for x in range(int(columns/xChunk+1)):
+            xStart = x*xChunk
+            xEnd = (x+1)*xChunk
+            if xEnd >= columns:
+                xEnd = columns 
+            if xEnd == xStart:
+                continue
+            
+            if interleave == "bip":
+                sliceArr = dataArr[yStart:yEnd,xStart:xEnd,:]
+            elif interleave == "bil":
+                sliceArr = np.moveaxis(dataArr[yStart:yEnd,:,xStart:xEnd],-1,0)
+            elif interleave == "bsq":
+                sliceArr = dataArr[:,yStart:yEnd,xStart:xEnd].T
+            
+            #Testing        
+            #plt.matshow(sliceArr[:,:,100])
+            yield sliceArr
+
+
+
+        
 
