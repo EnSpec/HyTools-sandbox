@@ -128,6 +128,9 @@ def envi_iter_bands():
 def envi_iter_chunks(yChunk,xChunk):
     """ Iterate through ENVI format file chunk by chunk (lines x columns).
     
+    
+    Returns:
+            (yChunk x xChunk x bands) numpy array
     """
     
     yChunk,xChunk,bChunk  = (100,100,426)
