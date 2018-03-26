@@ -15,14 +15,13 @@ hyObj.shape = (300,300,426)
 hyObj.lines = 300
 hyObj.columns = 300
 hyObj.bands = 426
-hyObj.fileType = "enviBIL"
-hyObj.filename = enviBIL
+hyObj.file_type = "ENVI"
+hyObj.file_name = enviBIL
 hyObj.interleave = "bil"
 hyObj.dtype = np.int16
+hyObj.load_data()
 
-
-iterator = iterENVI()
-iterator.load_data(hyObj,by = 'chunks', chunk_size = (100,100))
+iterator = hyObj.iterate(by = 'chunks')
 
 plt.matshow(iterator.read_next()[:,:,100])
 
@@ -43,28 +42,16 @@ class iterENVI(object):
         HDF hierarchical structure type, default NEON
         
     """
-    def __init__(self):
-        self
-        
-    def load_data(self,hyObj, by, chunk_size = None):     
-        
-        self.interleave = hyObj.interleave
+    def __init__(self,data,by,interleave, chunk_size = None):
+          
+        self.interleave = interleave
         self.shape= hyObj.shape
         self.chunk_size= chunk_size
         self.by = by
         self.current_column = 0
         self.current_line = 0
         self.current_band = 0
-   
-        if self.interleave == "bip":
-            self.data =  np.memmap(hyObj.filename,dtype = hyObj.dtype, mode='r', shape = (hyObj.lines,hyObj.columns,hyObj.bands))
-        elif hyObj.interleave == "bil":
-            self.data = np.memmap(hyObj.filename,dtype = hyObj.dtype, mode='r', shape =(hyObj.lines,hyObj.bands,hyObj.columns))
-        elif hyObj.interleave == "bsq":
-            self.data = np.memmap(hyObj.filename,dtype = hyObj.dtype, mode='r',shape =(hyObj.bands,hyObj.lines,hyObj.columns))
-        else:
-            print("Iterator type not recognized.")
-    
+        self.data = data
     
     def read_next(self):
         """ Return next line/column/band/chunk.
