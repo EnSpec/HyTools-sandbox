@@ -69,6 +69,7 @@ class hyTools(object):
         self.interleave = np.nan
         self.fileType = np.nan
         self.filename = np.nan
+        self.shape = np.nan
         self.lines = np.nan
         self.columns = np.nan
         self.bands = np.nan
@@ -81,43 +82,90 @@ class hyTools(object):
         self.crs = np.nan
         self.ulX = np.nan
         self.ulY = np.nan
+        self.dtype = np.nan
         
+        if self.file_type == "HDF":
+            self.data = None
+        elif self.file_type == "ENVI":
+            self.data = None
 
-    def iterbands(self):    
+    def iter_bands(self):    
         """Return band-wise iterator
         """
         
         if self.file_type == "HDF":
-            iterHDF(self, by = "bands")
+            iterator = iterHDF()
         elif self.file_type == "ENVI":
-            iterENVI(self, by = "bands")
+            iterator = iterENVI()
+            
+        iterator.load(self,"bands")
+        return iterator
         
-    def iterrows(self):    
+    def iter_rows(self):    
         """Return row-wise iterator
         """
         if self.file_type == "HDF":
-            iterHDF(self, by = "rows")
+            iterator = iterHDF()
         elif self.file_type == "ENVI":
-            iterENVI(self, by = "rows")
+            iterator = iterENVI()
+            
+        iterator.load(self,"rows")
+        return iterator
         
-    def itercolumns(self):    
+    def iter_columns(self):    
         """Return column-wise iterator
         """ 
         if self.file_type == "HDF":
-            iterHDF(self, by = "columns")
+            iterator = iterHDF()
         elif self.file_type == "ENVI":
-            iterENVI(self, by = "columns")
+            iterator = iterENVI()
+            
+        iterator.load(self,"columns")
+        return iterator
     
     
-    def iterchunks(self,chunksize = "infer"):    
+    def iter_chunks(self,chunksize = "infer"):    
         """Return chunk-wise iterator
         """        
         if self.file_type == "HDF":
-            iterHDF(self, by = "chunks",chunksize = chunksize)
+            iterator = iterHDF()
         elif self.file_type == "ENVI":
-            iterENVI(self, by = "chunks",chunksize = chunksize)
+            iterator = iterENVI()
             
+        iterator.load(self,"chunks", chunksize= (100,100))
+        return iterator
             
+    
+    def get_band(self,band):
+        
+        if self.file_type == "HDF":
+            band = None
+        elif self.file_type == "ENVI":
+            band = envi_read_band(self.data,band,self.interleave)
+        return band
+             
+    def get_line(self,band):
+        
+        if self.file_type == "HDF":
+            line = None
+        elif self.file_type == "ENVI":
+            line = envi_read_band(self.data,line,self.interleave)
+        return line
             
-            
+    def get_column(self,band):
+        
+        if self.file_type == "HDF":
+            column = None
+        elif self.file_type == "ENVI":
+            column = envi_read_band(self.data,column,self.interleave)
+        return column
+        
+    def get_chunk(self,xStart,xEnd,yStart,yEnd):
+        
+        if self.file_type == "HDF":
+            chunk = None
+        elif self.file_type == "ENVI":
+            chunk =   envi_read_chunk(self.data,xStart,xEnd,yStart,yEnd,self.interleave)
+        return chunk
+        
             
