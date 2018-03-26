@@ -100,11 +100,13 @@ class hyTools(object):
         elif self.file_type  == "HDF":
             self.data = np.nan
        
+        
+        
     def close_data(self):
         print("Close data file.") 
          
     def iterate(self,by,chunk_size= (100,100)):    
-        """Return iterator
+        """Return iterator.
         """
         
         if self.file_type == "HDF":

@@ -33,17 +33,22 @@ plt.matshow(iterator.read_next()[:,:,100])
 class iterENVI(object):
     """Iterator class for reading ENVI data file.
     
-    
-    Parameters
-    ----------
-    hyFile : hyTools file object
-
-    by: str
-        HDF hierarchical structure type, default NEON
-        
     """
+    
+    
     def __init__(self,data,by,interleave, chunk_size = None):
-          
+        """
+        
+        Parameters
+        ----------
+        data : memmap object
+    
+        by: iterator slice lines, columns, bands or chunks
+        
+        chunk_size: y,x chunks size
+            
+            
+        """
         self.interleave = interleave
         self.shape= hyObj.shape
         self.chunk_size= chunk_size
@@ -66,7 +71,6 @@ class iterENVI(object):
         elif self.by == "bands":
             subset =  envi_read_band(self.data,self.current_band,self.interleave)
             self.current_band +=1
-            
         elif self.by == "chunks":
             # Set array indices for current chunk and update current line and column.
             yStart = self.current_line
@@ -88,16 +92,13 @@ class iterENVI(object):
             else:         
                 print(xStart,xEnd,yStart,yEnd)
                 subset =  envi_read_chunk(self.data,xStart,xEnd,yStart,yEnd,self.interleave)
-
         return subset
         
-    
-    def close(self):
-        """ Close numpy mem-map object.
-        """
-        del self.data
+
         
     def reset(self):
+        """Reset counters.
+        """
         self.current_column = 0
         self.current_line = 0
         self.current_band = 0
@@ -105,7 +106,7 @@ class iterENVI(object):
         
         
 def envi_read_line(dataArray,line,interleave):
-    """ Iterate through ENVI format file line by line.
+    """ Read line from ENVI file.
     
     """
            
@@ -121,7 +122,7 @@ def envi_read_line(dataArray,line,interleave):
     return lineSubset
 
 def envi_read_column(dataArray,column,interleave):
-    """ Read column.
+    """ Read column from ENVI file.
     
     """
        
@@ -135,7 +136,7 @@ def envi_read_column(dataArray,column,interleave):
     return columnSubset 
     
 def envi_read_band(enviIter,band,interleave):
-    """ Read band.
+    """ Read band from ENVI file.
     
     """
        
@@ -150,10 +151,7 @@ def envi_read_band(enviIter,band,interleave):
 
     
 def envi_read_chunk(dataArray,xStart,xEnd,yStart,yEnd,interleave):
-    """ Iterate through ENVI format file chunk by chunk (lines x columns).
-    
-    Returns:
-            (yChunk x xChunk x bands) numpy array
+    """ Read chunk from ENVI file.
     """
 
     if interleave == "bip":
