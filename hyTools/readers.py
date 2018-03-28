@@ -2,40 +2,11 @@ import numpy as np, os
 import matplotlib.pyplot as plt
 
 
-#Test data
-###################################################
-test_dir = '/Users/adam/Dropbox/projects/hyTools/HyTools-sandbox/test_data'
-enviBIP = "%s/test_subset_300x300_bip" % test_dir
-enviBIL = "%s/test_subset_300x300_bil" % test_dir
-enviBSQ = "%s/test_subset_300x300_bsq" % test_dir
-hdf = "%s/test_subset_300x300.h5" % test_dir
-
-hyObj = hyTools()
-hyObj.shape = (300,300,426)
-hyObj.lines = 300
-hyObj.columns = 300
-hyObj.bands = 426
-hyObj.file_type = "ENVI"
-hyObj.file_name = enviBIL
-hyObj.interleave = "bil"
-hyObj.dtype = np.int16
-hyObj.load_data()
-
-iterator = hyObj.iterate(by = 'chunks')
-
-plt.matshow(iterator.read_next()[:,:,100])
-
-
-###################################################  
-    
-    
-
 class iterENVI(object):
     """Iterator class for reading ENVI data file.
     
     """
-    
-    
+
     def __init__(self,data,by,interleave, chunk_size = None):
         """
         
@@ -53,45 +24,77 @@ class iterENVI(object):
         self.shape= hyObj.shape
         self.chunk_size= chunk_size
         self.by = by
-        self.current_column = 0
-        self.current_line = 0
-        self.current_band = 0
+        self.current_column = -1
+        self.current_line = -1
+        self.current_band = -1
         self.data = data
+        self.complete = False
+        
+        if interleave == "bip":
+            self.lines,self.columns,self.bands = data.shape
+        elif interleave == "bil":
+            self.lines,self.bands,self.columns = data.shape
+        elif interleave == "bsq":
+            self.bands,self.lines,self.columns = data.shape
+        
     
     def read_next(self):
         """ Return next line/column/band/chunk.
         
         """
-        if self.by == "lines":
-            subset =  envi_read_line(self.data,self.current_line,self.interleave)
+        if self.by == "line":
             self.current_line +=1
-        elif self.by == "columns":
-            subset =  envi_read_column(self.data,self.current_column,self.interleave)
+            if self.current_line == self.lines:
+                self.complete = True
+                subset = np.nan
+            else:
+                subset =  envi_read_line(self.data,self.current_line,self.interleave)
+
+        elif self.by == "column":
             self.current_column +=1
-        elif self.by == "bands":
-            subset =  envi_read_band(self.data,self.current_band,self.interleave)
+            if self.current_column == self.columns:
+                self.complete = True
+                subset = np.nan
+            else:
+                subset =  envi_read_column(self.data,self.current_column,self.interleave)
+
+        elif self.by == "band":
             self.current_band +=1
-        elif self.by == "chunks":
+            if self.current_band == self.bands:
+                self.complete = True
+                subset = np.nan
+            else:
+                subset =  envi_read_band(self.data,self.current_band,self.interleave)
+
+        elif self.by == "chunk":
+            
+            if self.current_column == -1:
+                self.current_column +=1
+                self.current_line +=1
+            else:
+                self.current_column += self.chunk_size[1]
+                
+            if self.current_column >= self.columns:
+                self.current_column = 0
+                self.current_line += self.chunk_size[0]
+
             # Set array indices for current chunk and update current line and column.
             yStart = self.current_line
             yEnd = self.current_line + self.chunk_size[0]  
-            if yEnd >= self.shape[0]:
-                yEnd = self.shape[0] 
-
+            if yEnd >= self.lines:
+                yEnd = self.lines 
             xStart = self.current_column 
             xEnd = self.current_column + self.chunk_size[1]
-            if xEnd >= self.shape[1]:
-                xEnd = self.shape[1] 
-                self.current_column = 0
-                self.current_line += self.chunk_size[0]
-            else:
-                self.current_column += self.chunk_size[0]
-                
-            if (xEnd == xStart) | (yEnd == yStart):
-                subset =  None
-            else:         
-                print(xStart,xEnd,yStart,yEnd)
-                subset =  envi_read_chunk(self.data,xStart,xEnd,yStart,yEnd,self.interleave)
+            if xEnd >= self.columns:
+                xEnd = self.columns 
+
+            subset =  envi_read_chunk(self.data,xStart,xEnd,yStart,yEnd,self.interleave)
+            if (yEnd == self.lines) and (xEnd == self.columns):
+                self.complete = True
+        
+        else:
+            print("ERROR: Iterator unit not recognized.")    
+            subset = np.nan
         return subset
         
 
@@ -99,10 +102,10 @@ class iterENVI(object):
     def reset(self):
         """Reset counters.
         """
-        self.current_column = 0
-        self.current_line = 0
-        self.current_band = 0
-        
+        self.current_column = -1
+        self.current_line = -1
+        self.current_band = -1
+        self.complete = False
         
         
 def envi_read_line(dataArray,line,interleave):
@@ -135,7 +138,7 @@ def envi_read_column(dataArray,column,interleave):
         
     return columnSubset 
     
-def envi_read_band(enviIter,band,interleave):
+def envi_read_band(dataArray,band,interleave):
     """ Read band from ENVI file.
     
     """
@@ -164,7 +167,105 @@ def envi_read_chunk(dataArray,xStart,xEnd,yStart,yEnd,interleave):
     return chunkSubset
 
 
+     
+def parse_ENVI_header(hdrFile):
+    """Parse ENVI header into dictionary
+    """
 
-        
+    # Dictionary of all types
+    fieldDict = {"acquisition time": "str",
+                 "band names":"list_str", 
+                 "bands": "int", 
+                 "bbl": "list_int",
+                 "byte order": "int",
+                 "class lookup": "str",
+                 "class names": "str",
+                 "classes": "int",
+                 "cloud cover": "float",
+                 "complex function": "str",
+                 "coordinate system string": "str",
+                 "correction factors": "list_float",
+                 "data gain values": "list_float",
+                 "data ignore value": "float",
+                 "data offset values": "list_float",
+                 "data reflectance gain values": "list_float",
+                 "data reflectance offset values": "list_float",
+                 "data type": "int",
+                 "default bands": "list_int",
+                 "default stretch": "str",
+                 "dem band": "int",
+                 "dem file": "str",
+                 "description": "str",
+                 "envi description":"str",
+                 "file type": "str",
+                 "fwhm": "list_float",
+                 "geo points": "list_float",
+                 "header offset": "int",
+                 "interleave": "str",
+                 "lines": "int",
+                 "map info": "list_str",
+                 "pixel size": "float",
+                 "projection info": "str",
+                 "read procedures": "str",
+                 "reflectance scale factor": "float",
+                 "rpc info": "str",
+                 "samples":"int",
+                 "security tag": "str",
+                 "sensor type": "str",
+                 "smoothing factors": "list_float",
+                 "solar irradiance": "float",
+                 "spectra names": "list_str",
+                 "sun azimuth": "float",
+                 "sun elevation": "float",
+                 "wavelength": "list_float",
+                 "wavelength units": "str",
+                 "x start": "float",
+                 "y start": "float",
+                 "z plot average": "str",
+                 "z plot range": "str",
+                 "z plot titles": "str"}
 
+    headerDict = {}
+
+    headerFile = open(hdrFile,'r')
+    line = headerFile.readline()
+      
+    while line :
+        if "=" in line:
+            key,value = line.split("=",1)
+            
+            # Add field not in ENVI default list
+            if key.strip() not in fieldDict.keys():
+                fieldDict[key.strip()] = "str"
+            
+            valType = fieldDict[key.strip()]
+            
+            if "{" in value and not "}" in value: 
+                while "}" not in line:
+                    line = headerFile.readline()
+                    value+=line
+            if valType == "list_float":
+                value= np.array([float(x) for x in value.translate(str.maketrans("\n{}","   ")).split(",")])
+            elif valType == "list_int":
+                value= np.array([int(x) for x in value.translate(str.maketrans("\n{}","   ")).split(",")])
+            elif valType == "list_str":
+                value= [x.strip() for x in value.translate(str.maketrans("\n{}","   ")).split(",")]
+            elif valType == "int":
+                value = int(value.translate(str.maketrans("\n{}","   ")))
+            elif valType == "float":
+                value = float(value.translate(str.maketrans("\n{}","   ")))
+            elif valType == "str":
+                value = value.translate(str.maketrans("\n{}","   ")).strip().lower()
+
+            headerDict[key.strip()] = value
+                            
+        line = headerFile.readline()
+    
+    # Fill unused fields with nans
+    for key in fieldDict.keys():
+        if key not in headerDict.keys():
+            headerDict[key] = np.nan
+    
+    headerFile.close()
+    return headerDict
         
