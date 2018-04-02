@@ -103,7 +103,7 @@ def openHDF(srcFile, structure = "NEON", no_data = -9999):
     hyObj.columns = data.shape[1]
     hyObj.bands = data.shape[2]
     hyObj.no_data = no_data
-    hyObj.file_type = "hdf"
+    hyObj.file_type = "HDF"
     hyObj.file_name = srcFile
     
     hdfObj.close()
@@ -167,7 +167,9 @@ class HyTools(object):
         if self.file_type  == "ENVI":
             self.data = np.memmap(self.file_name,dtype = self.dtype, mode=mode, shape = self.shape)
         elif self.file_type  == "HDF":
-            self.data = np.nan
+            self.hdfObj = h5py.File(self.file_name,'r')
+            base_key = list(self.hdfObj.keys())[0]
+            self.data = self.hdfObj[base_key]["Reflectance"]["Reflectance_Data"] 
         
         print("Data object loaded to memory.")
         
@@ -175,8 +177,11 @@ class HyTools(object):
         """Close data object.
         """
 
-        del self.data
-        print("Close data file.") 
+        if self.file_type  == "ENVI":
+            del self.data
+        elif self.file_type  == "HDF":
+            self.hdfObj.close()
+        print("Closed data file.") 
          
     def iterate(self,by,chunk_size= (100,100)):    
         """Return data iterator.
@@ -197,7 +202,7 @@ class HyTools(object):
         """
         
         if self.file_type == "HDF":
-            iterator = iterHDF()
+            iterator = iterHDF(self.data,by,chunk_size)
         elif self.file_type == "ENVI":
             iterator = iterENVI(self.data,by,self.interleave,chunk_size)
         return iterator     
@@ -216,7 +221,7 @@ class HyTools(object):
         """
         
         if self.file_type == "HDF":
-            band = None
+            band = hdf_read_band(self.data,band)
         elif self.file_type == "ENVI":
             band = envi_read_band(self.data,band,self.interleave)
         return band
@@ -235,7 +240,7 @@ class HyTools(object):
         """
         
         if self.file_type == "HDF":
-            line = None
+            line = hdf_read_line(self.data,line)
         elif self.file_type == "ENVI":
             line = envi_read_line(self.data,line,self.interleave)
         return line
@@ -253,7 +258,7 @@ class HyTools(object):
         column : np.array (lines, bands)
         """
         if self.file_type == "HDF":
-            column = None
+            column = hdf_read_column(self.data,column)
         elif self.file_type == "ENVI":
             column = envi_read_column(self.data,column,self.interleave)
         return column
@@ -273,7 +278,7 @@ class HyTools(object):
         chunk : np.array (y_end-y_start,x_end-x_start, bands)
         """
         if self.file_type == "HDF":
-            chunk = None
+            chunk = hdf_read_chunk(self.data,x_start,x_end,y_start,y_end)
         elif self.file_type == "ENVI":
             chunk =   envi_read_chunk(self.data,x_start,x_end,y_start,y_end,self.interleave)
         return chunk
