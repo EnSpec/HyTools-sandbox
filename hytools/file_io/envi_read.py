@@ -21,7 +21,6 @@ class iterENVI(object):
             
         """
         self.interleave = interleave
-        self.shape= hyObj.shape
         self.chunk_size= chunk_size
         self.by = by
         self.current_column = -1
@@ -36,7 +35,8 @@ class iterENVI(object):
             self.lines,self.bands,self.columns = data.shape
         elif interleave == "bsq":
             self.bands,self.lines,self.columns = data.shape
-        
+        else:
+            print("ERROR: Iterator unit not recognized.")   
     
     def read_next(self):
         """ Return next line/column/band/chunk.
@@ -44,27 +44,22 @@ class iterENVI(object):
         """
         if self.by == "line":
             self.current_line +=1
-            if self.current_line == self.lines:
+            if self.current_line == self.lines-1:
                 self.complete = True
                 subset = np.nan
-            else:
-                subset =  envi_read_line(self.data,self.current_line,self.interleave)
+            subset =  envi_read_line(self.data,self.current_line,self.interleave)
 
         elif self.by == "column":
             self.current_column +=1
-            if self.current_column == self.columns:
+            if self.current_column == self.columns-1:
                 self.complete = True
-                subset = np.nan
-            else:
-                subset =  envi_read_column(self.data,self.current_column,self.interleave)
+            subset =  envi_read_column(self.data,self.current_column,self.interleave)
 
         elif self.by == "band":
             self.current_band +=1
-            if self.current_band == self.bands:
+            if self.current_band == self.bands-1:
                 self.complete = True
-                subset = np.nan
-            else:
-                subset =  envi_read_band(self.data,self.current_band,self.interleave)
+            subset =  envi_read_band(self.data,self.current_band,self.interleave)
 
         elif self.by == "chunk":
             
@@ -79,25 +74,20 @@ class iterENVI(object):
                 self.current_line += self.chunk_size[0]
 
             # Set array indices for current chunk and update current line and column.
-            yStart = self.current_line
-            yEnd = self.current_line + self.chunk_size[0]  
-            if yEnd >= self.lines:
-                yEnd = self.lines 
-            xStart = self.current_column 
-            xEnd = self.current_column + self.chunk_size[1]
-            if xEnd >= self.columns:
-                xEnd = self.columns 
+            y_start = self.current_line
+            y_end = self.current_line + self.chunk_size[0]  
+            if y_end >= self.lines:
+                y_end = self.lines 
+            x_start = self.current_column 
+            x_end = self.current_column + self.chunk_size[1]
+            if x_end >= self.columns:
+                x_end = self.columns 
 
-            subset =  envi_read_chunk(self.data,xStart,xEnd,yStart,yEnd,self.interleave)
-            if (yEnd == self.lines) and (xEnd == self.columns):
+            subset =  envi_read_chunk(self.data,x_start,x_end,y_start,y_end,self.interleave)
+            if (y_end == self.lines) and (x_end == self.columns):
                 self.complete = True
-        
-        else:
-            print("ERROR: Iterator unit not recognized.")    
-            subset = np.nan
+         
         return subset
-        
-
         
     def reset(self):
         """Reset counters.
@@ -153,16 +143,16 @@ def envi_read_band(dataArray,band,interleave):
     return bandSubset
 
     
-def envi_read_chunk(dataArray,xStart,xEnd,yStart,yEnd,interleave):
+def envi_read_chunk(dataArray,x_start,x_end,y_start,y_end,interleave):
     """ Read chunk from ENVI file.
     """
 
     if interleave == "bip":
-        chunkSubset = dataArray[yStart:yEnd,xStart:xEnd,:]
+        chunkSubset = dataArray[y_start:y_end,x_start:x_end,:]
     elif interleave == "bil":
-        chunkSubset = np.moveaxis(dataArray[xStart:xEnd,:,yStart:yEnd],-1,0)
+        chunkSubset = np.moveaxis(dataArray[y_start:y_end,:,x_start:x_end],-1,-2)
     elif interleave == "bsq":
-        chunkSubset = dataArray[:,xStart:xEnd,yStart:yEnd].T
+        chunkSubset = np.moveaxis(dataArray[:,y_start:y_end,x_start:x_end],0,-1)
     
     return chunkSubset
 

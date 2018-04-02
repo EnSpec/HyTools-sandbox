@@ -26,7 +26,8 @@ class writeENVI(object):
         srcFile : str
             Pathname of output ENVI data file
         
-        headerDict : dictionary containing ENVI header information
+        headerDict : dict
+            Dictionary containing ENVI header information
         Returns
         -------
         Populated hyTools data object
@@ -91,19 +92,20 @@ class writeENVI(object):
         
     def write_chunk(self,dataArray,line,column):
         """ Write chunk to ENVI file.
+        
         """
     
-        xStart = column 
-        xEnd = column + dataArray.shape[1]
-        yStart = line
-        yEnd = line + dataArray.shape[0]
+        x_start = column 
+        x_end = column + dataArray.shape[1]
+        y_start = line
+        y_end = line + dataArray.shape[0]
     
         if self.interleave == "bip":
-            self.data[yStart:yEnd,xStart:xEnd,:] = dataArray
+            self.data[y_start:y_end,x_start:x_end,:] = dataArray
         elif self.interleave == "bil":
-            self.data[xStart:xEnd,:,yStart:yEnd] = np.moveaxis(dataArray,0,-1)
+            self.data[x_start:x_end,:,y_start:y_end] = np.moveaxis(dataArray,0,-1)
         elif self.interleave == "bsq":
-            self.data[:,xStart:xEnd,yStart:yEnd] = dataArray.T
+            self.data[:,x_start:x_end,y_start:y_end] = dataArray.T
         
     def close(self):
         write_ENVI_header(self.output_name,self.headerDict)

@@ -1,4 +1,4 @@
-#from .iterators import *
+from .file_io import *
 import numpy as np,os,h5py
 
 # ENVI datatype conversion dictionary
@@ -137,6 +137,8 @@ class HyTools(object):
     def create_bad_bands(self,bad_regions):
         """Create bad bands list based upon spectrum regions. Good: 1, bad : 0.
         
+        Parameters
+        ----------
         bad_regions : list
             List of lists containing start and end values of wavelength regions considered bad.
             ex: [[350,400].....[2450,2500]] Wavelengths should be in the same units as
@@ -149,10 +151,18 @@ class HyTools(object):
             for start,end in bad_regions:
                 if (wavelength >= start) and (wavelength <=end):
                     bad = 0
-             bad_bands.append(bad)             
-         self.bad_bands = np.array(bad_bands)
+            bad_bands.append(bad)             
+        self.bad_bands = np.array(bad_bands)
     
     def load_data(self, mode = 'r'):
+        """Load data object to memory.
+        
+        Parameters
+        ----------
+        mode: str 
+            File read mode, default: read-only
+            
+        """
         
         if self.file_type  == "ENVI":
             self.data = np.memmap(self.file_name,dtype = self.dtype, mode=mode, shape = self.shape)
@@ -162,12 +172,30 @@ class HyTools(object):
         print("Data object loaded to memory.")
         
     def close_data(self):
+        """Close data object.
+        """
+
         del self.data
         print("Close data file.") 
          
     def iterate(self,by,chunk_size= (100,100)):    
-        """Return iterator.
+        """Return data iterator.
+        
+        Parameters
+        ----------
+        by: str
+            Dimension along which to iterate. 
+            Lines,columns,bands or chunks.
+        chunk_size : shape (columns , rows)
+            Size of chunks to iterate over, only applicable when
+            by == chunks.
+        
+        Returns
+        -------
+        iterator: hyTools iterator class
+            
         """
+        
         if self.file_type == "HDF":
             iterator = iterHDF()
         elif self.file_type == "ENVI":
@@ -176,6 +204,16 @@ class HyTools(object):
 
     
     def get_band(self,band):
+        """Return the i-th band of the image.
+
+        Parameters
+        ----------
+        band: int
+                Zero-indexed band index
+        Returns
+        -------
+        band : np.array (lines, columns)
+        """
         
         if self.file_type == "HDF":
             band = None
@@ -183,28 +221,68 @@ class HyTools(object):
             band = envi_read_band(self.data,band,self.interleave)
         return band
              
-    def get_line(self,band):
+    def get_line(self,line):        
+        """Return the i-th band of the image.
+        
+        Parameters
+        ----------
+        band: int
+                Zero-indexed band index
+
+        Returns
+        -------
+        line : np.array (columns, bands)
+        """
         
         if self.file_type == "HDF":
             line = None
         elif self.file_type == "ENVI":
-            line = envi_read_band(self.data,line,self.interleave)
+            line = envi_read_line(self.data,line,self.interleave)
         return line
             
-    def get_column(self,band):
-        
+    def get_column(self,column):
+        """Return the i-th column of the image.
+       
+        Parameters
+        ----------
+        column: int
+                Zero-indexed column index
+
+        Returns
+        -------
+        column : np.array (lines, bands)
+        """
         if self.file_type == "HDF":
             column = None
         elif self.file_type == "ENVI":
-            column = envi_read_band(self.data,column,self.interleave)
+            column = envi_read_column(self.data,column,self.interleave)
         return column
         
-    def get_chunk(self,xStart,xEnd,yStart,yEnd):
-        
+    def get_chunk(self,x_start,x_end,y_start,y_end):
+        """Return chunk from image.
+
+        Parameters
+        ----------
+        x_start : int
+        x_end : int
+        y_start : int
+        y_end : int
+            
+        Returns
+        -------
+        chunk : np.array (y_end-y_start,x_end-x_start, bands)
+        """
         if self.file_type == "HDF":
             chunk = None
         elif self.file_type == "ENVI":
-            chunk =   envi_read_chunk(self.data,xStart,xEnd,yStart,yEnd,self.interleave)
+            chunk =   envi_read_chunk(self.data,x_start,x_end,y_start,y_end,self.interleave)
         return chunk
 
         
+    
+    
+    
+    
+    
+    
+    
