@@ -181,7 +181,7 @@ def parse_ENVI_header(hdrFile):
                  "data reflectance gain values": "list_float",
                  "data reflectance offset values": "list_float",
                  "data type": "int",
-                 "default bands": "list_int",
+                 "default bands": "list_float",
                  "default stretch": "str",
                  "dem band": "int",
                  "dem file": "str",
