@@ -166,7 +166,7 @@ def parse_ENVI_header(hdrFile):
     fieldDict = {"acquisition time": "str",
                  "band names":"list_str", 
                  "bands": "int", 
-                 "bbl": "list_int",
+                 "bbl": "list_float",
                  "byte order": "int",
                  "class lookup": "str",
                  "class names": "str",
