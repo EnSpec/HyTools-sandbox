@@ -123,7 +123,7 @@ def write_ENVI_header(output_name,headerDict):
     for key in headerDict.keys():
         value = headerDict[key]
         # Convert list to comma seperated strings
-        if type(value) == list:
+        if type(value) == list or type(value) == np.ndarray:
             value = "{%s}" % ",".join(map(str, value))
         else:
             value = str(value)
