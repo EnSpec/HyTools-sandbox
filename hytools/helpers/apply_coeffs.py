@@ -1,6 +1,17 @@
 import numpy as np
 from ..file_io import *
+import pandas as pd
 
+
+
+def column_retype(column_name):
+    """Remap wavelength column names to float"""
+    try:
+        new_name  = float(column_name)
+    except:
+        new_name = column_name
+    
+    return new_name
 
 def apply_plsr(hyObj,plsr_coeffs):
     """Apply Partial Least Squares Regression (PLSR) Coefficients to image.
@@ -23,7 +34,7 @@ def apply_plsr(hyObj,plsr_coeffs):
         | n       |           |              |          |              |
         +---------+-----------+--------------+----------+--------------+
                 
-   Where  wavelength_1 is the wavelength of the band in the same units as the image.
+   Where  wavelength_n is the wavelength of the nth band in the same units as the image (ex 552.0).
         
         
     Returns
@@ -35,21 +46,49 @@ def apply_plsr(hyObj,plsr_coeffs):
         
     """
     
+    traitModel  = pd.read_csv(plsr_coeffs,index_col=0)
+    traitModel.columns = traitModel.columns.map(column_retype)
+    coeffs_wavelength = [x for x in traitModel.columns if x != "intercept"]
+
+    intercept = traitModel["intercept"].values
+    coeffs = traitModel[coeffs_wavelength].values
     
-    coeffs = np.loadtxt(plsr_coeffs,dtype= str, delimiter=',')
+    band_mask = [x in coeffs_wavelength for x in hyObj.wavelengths]
     
-    #TODO: Check that coeffiecient wavelengths and image wavelengths match
+    # Check if all bands match in image and coeffs
+    if np.sum(band_mask) != len(coeffs_wavelength):
+        print("ERROR: Coefficient wavelengths and image wavelengths do not match!")
+        return
     
     iterator = hyObj.iterate(by = 'chunk')
 
     # Empty array to hold trait estimates
-    trait_pred = np.zeros((hyObj.lines,hyObj.columns,2)
+    trait_arr = np.zeros((hyObj.lines,hyObj.columns,2))
 
+    start = time.time()
+    
     while not iterator.complete:
-        chunk = iterator.read_next()            
+        chunk = iterator.read_next()      
+
+        # Apply PLSR coefficients
+        traitPred = np.einsum('jkl,ml->jkm',chunk[:,:,band_mask],coeffs, optimize='optimal')
+        traitPred = traitPred + intercept
         
+        traitPred_mean = traitPred.mean(axis=2)
+        traitPred_mean[chunk[:,:,0] == hyObj.no_data] = hyObj.no_data
+
+        traitPred_std =traitPred.std(axis=2,ddof=1)
+        traitPred_std[chunk[:,:,0] == hyObj.no_data] = hyObj.no_data
         
-   
+        # Trait array indices
+        line_start =iterator.current_line 
+        line_end = iterator.current_line + chunk.shape[0]
+        col_start = iterator.current_column
+        col_end = iterator.current_column + chunk.shape[1]
+        
+        trait_arr[line_start:line_end,col_start:col_end,0] +=traitPred_mean
+        trait_arr[line_start:line_end,col_start:col_end,1] +=traitPred_std
+    
     
     return trait_pred
 
