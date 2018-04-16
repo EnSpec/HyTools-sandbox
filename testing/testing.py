@@ -7,7 +7,7 @@ home = os.path.expanduser("~")
 
 hyObj = ht.openENVI('/Users/adam/Documents/test_avc')
 hyObj.load_data()
-hyObj.no
+hyObj.no_data =0
 
 # Create a vegetation mask
 ir = hyObj.get_band(64)
