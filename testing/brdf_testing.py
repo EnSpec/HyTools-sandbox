@@ -37,5 +37,20 @@ brdf_output_name = '/Users/adam/Documents/test_avc_obs_brdf'
 apply_brdf_coeffs(hyObj,brdf_output_name,brdf_coeffs,solar_az,solar_zn,sensor_az,sensor_zn,'thick','dense')
 
 
+#Load BRDF corrected data and compare
+hyObj_brdf = ht.openENVI(brdf_output_name)
+hyObj_brdf.load_data()
+
+line = 500
+uncorrected = hyObj.get_line(line)
+corrected = hyObj_brdf.get_line(line)
+
+plt.plot(corrected[:,30],c='b')
+plt.plot(uncorrected[:,30],c='r')
+
+hyObj_brdf.close_data()
+hyObj.close_data()
+
+
 
 
