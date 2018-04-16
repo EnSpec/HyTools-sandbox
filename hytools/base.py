@@ -27,7 +27,6 @@ def openENVI(srcFile):
 
     """
     
-    
     if not os.path.isfile(srcFile + ".hdr"):
         print("ERROR: Header file not found.")
         return None
@@ -99,7 +98,7 @@ def openHDF(srcFile, structure = "NEON", no_data = -9999):
     hyObj.wavelengths = metadata['Spectral_Data']['Wavelength'].value.astype(int)
     hyObj.ulX = np.nan
     hyObj.ulY = np.nan
-    hyObj.rows = data.shape[0]
+    hyObj.lines = data.shape[0]
     hyObj.columns = data.shape[1]
     hyObj.bands = data.shape[2]
     hyObj.no_data = no_data
@@ -133,6 +132,11 @@ class HyTools(object):
         self.dtype = np.nan
         self.data = np.nan
         self.header_dict = np.nan
+        self.solar_zn = []
+        self.solar_az = []
+        self.sensor_zn = []
+        self.sensor_az = []
+        self.mask = np.nan
         
     def create_bad_bands(self,bad_regions):
         """Create bad bands list based upon spectrum regions. Good: 1, bad : 0.
@@ -170,6 +174,8 @@ class HyTools(object):
             self.hdfObj = h5py.File(self.file_name,'r')
             base_key = list(self.hdfObj.keys())[0]
             self.data = self.hdfObj[base_key]["Reflectance"]["Reflectance_Data"] 
+        
+        self.mask = np.ones((self.lines, self.columns), dtype=bool)
         
         print("Data object loaded to memory.")
         
@@ -283,7 +289,26 @@ class HyTools(object):
             chunk =   envi_read_chunk(self.data,x_start,x_end,y_start,y_end,self.interleave)
         return chunk
 
+
         
+    def set_mask(self,mask):
+        """Set mask for image analysis.
+          
+          mask: m x n numpy array 
+               A boolean mask to exclude pixels from analysis, shape should be the same
+               as the number of line and columns of the image.
+
+        """
+        
+        if mask.shape == (self.lines,self.columns):
+            self.mask = mask
+        else:
+            print("Error: Shape of mask does not match shape of image.")
+        
+    
+    
+    
+    
     
     
     

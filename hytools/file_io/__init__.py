@@ -7,5 +7,5 @@ and writing to multiple file formats.
 from .envi_write import *
 from .envi_read import *
 #from .hdf_write import *
-#from .hdf_read import *
+from .hdf_read import *
 

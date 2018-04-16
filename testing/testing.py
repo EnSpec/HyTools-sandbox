@@ -1,35 +1,43 @@
 import numpy as np, os,time
-import glob
+import glob,matplotlib.pyplot as plt
 import hytools as ht
-from hytools.preprocess import vector_normalize
+from hytools.brdf import *
 
-#Test writers
-###################################################
-test_dir = '/Users/adam/Dropbox/projects/hyTools/HyTools-sandbox/testing'
-enviBIP = "%s/test_subset_300x300_bip" % test_dir
-enviBIL = "%s/test_subset_300x300_bil" % test_dir
-enviBSQ = "%s/test_subset_300x300_bsq" % test_dir
-hdf = "%s/test_subset_300x300.h5" % test_dir
+home = os.path.expanduser("~")
 
-hyObj = ht.openENVI(enviBIP)
+hyObj = ht.openENVI('/Users/adam/Documents/test_avc')
 hyObj.load_data()
+hyObj.no
 
-plt.matshow(hyObj.get_band(100))
+# Create a vegetation mask
+ir = hyObj.get_band(64)
+red = hyObj.get_band(30)
+ndvi = (ir-red)/(ir+red)
+mask = (ndvi > .1) & (ir != 0)
+hyObj.mask = mask 
 
-iterator = hyObj.iterate(by = 'band')
-
-while not iterator.complete:
-    band = iterator.read_next()
-    plt.matshow(band)
-    plt.show()
-    plt.close()
+del ir,red,ndvi,mask
 
 
-# Test vector normalization
-###################################################
-hyObj = ht.openENVI(enviBIL)
-hyObj.load_data()
-%timeit vector_normalize(hyObj,enviBIL+ "_vnorm")
+# Load ancillary data to memory
+obs_ort = ht.openENVI('/Users/adam/Documents/test_avc_obs_ort')
+obs_ort.load_data()
+
+sensor_az = np.radians(obs_ort.get_band(1))
+sensor_zn = np.radians(obs_ort.get_band(2))
+solar_az = np.radians(obs_ort.get_band(3))
+solar_zn = np.radians(obs_ort.get_band(4))
+
+# Generate and save coeffieicnets to file
+brdfDF = generate_brdf_coeffs_img(hyObj,solar_az,solar_zn,sensor_az,sensor_zn,'thick','dense')
+brdfDF.to_csv('/Users/adam/Documents/aviris_c_brdf.csv')
+
+
+# Apply coefficients to file
+brdf_coeffs = '/Users/adam/Documents/aviris_c_brdf.csv'
+brdf_output_name = '/Users/adam/Documents/test_avc_obs_brdf'
+apply_brdf_coeffs(hyObj,brdf_output_name,brdf_coeffs,solar_az,solar_zn,sensor_az,sensor_zn,'thick','dense')
+
 
 
 

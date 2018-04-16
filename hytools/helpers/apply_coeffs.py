@@ -13,6 +13,7 @@ def column_retype(column_name):
     
     return new_name
 
+
 def apply_plsr(hyObj,plsr_coeffs):
     """Apply Partial Least Squares Regression (PLSR) Coefficients to image.
 
@@ -35,6 +36,7 @@ def apply_plsr(hyObj,plsr_coeffs):
         +---------+-----------+--------------+----------+--------------+
                 
    Where  wavelength_n is the wavelength of the nth band in the same units as the image (ex 552.0).
+   Functions assumes that the wavelength order in the image and the coefficient csv is the same.
         
         
     Returns
@@ -64,9 +66,8 @@ def apply_plsr(hyObj,plsr_coeffs):
 
     # Empty array to hold trait estimates
     trait_arr = np.zeros((hyObj.lines,hyObj.columns,2))
-
-    start = time.time()
     
+    start = time.time()
     while not iterator.complete:
         chunk = iterator.read_next()      
 
@@ -89,6 +90,24 @@ def apply_plsr(hyObj,plsr_coeffs):
         trait_arr[line_start:line_end,col_start:col_end,0] +=traitPred_mean
         trait_arr[line_start:line_end,col_start:col_end,1] +=traitPred_std
     
-    
-    return trait_pred
+    return trait_arr
 
+
+
+def apply_topo(hyObj,topo_coeffs):  
+    return None
+    
+    
+    
+    
+    
+    
+
+def apply_brdf(hyObj,brdf_coeffs):
+    return None
+
+        
+        
+        
+        
+        

@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdf5:HDF5-File xmlns:hdf5="http://hdfgroup.org/HDF5/XML/schema/HDF5-File.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://hdfgroup.org/HDF5/XML/schema/HDF5-File http://www.hdfgroup.org/HDF5/XML/schema/HDF5-File.xsd">
+<hdf5:RootGroup OBJ-XID="xid_96" H5Path="/">
+   <hdf5:Group Name="CHEQ" OBJ-XID="xid_800" H5Path="/CHEQ" Parents="xid_96" H5ParentPaths="/" >
+      <hdf5:Group Name="Reflectance" OBJ-XID="xid_1832" H5Path="/CHEQ/Reflectance" Parents="xid_800" H5ParentPaths="/CHEQ" >
+         <hdf5:Group Name="Metadata" OBJ-XID="xid_2864" H5Path="/CHEQ/Reflectance/Metadata" Parents="xid_1832" H5ParentPaths="/CHEQ/Reflectance" >
+            <hdf5:Group Name="Ancillary_Imagery" OBJ-XID="xid_3896" H5Path="/CHEQ/Reflectance/Metadata/Ancillary_Imagery" Parents="xid_2864" H5ParentPaths="/CHEQ/Reflectance/Metadata" >
+            </hdf5:Group>
+            <hdf5:Group Name="Coordinate_System" OBJ-XID="xid_4928" H5Path="/CHEQ/Reflectance/Metadata/Coordinate_System" Parents="xid_2864" H5ParentPaths="/CHEQ/Reflectance/Metadata" >
+               <hdf5:Dataset Name="Coordinate_System_String" OBJ-XID="xid_5632" H5Path= "/CHEQ/Reflectance/Metadata/Coordinate_System/Coordinate_System_String" Parents="xid_4928" H5ParentPaths="/CHEQ/Reflectance/Metadata/Coordinate_System">
+                  <hdf5:StorageLayout>
+                     <hdf5:ContiguousLayout/>
+                  </hdf5:StorageLayout>
+                  <hdf5:FillValueInfo FillTime="FillOnAlloc" AllocationTime="Late">
+                     <hdf5:FillValue>
+                        <hdf5:Data>
+                           <!-- String fill values not yet implemented. -->
+                           <hdf5:NoData />
+                        </hdf5:Data>
+                     </hdf5:FillValue>
+                  </hdf5:FillValueInfo>
+                  <hdf5:Dataspace>
+                     <hdf5:ScalarDataspace />
+                  </hdf5:Dataspace>
+                  <hdf5:DataType>
+                     <hdf5:AtomicType>
+                        <hdf5:StringType Cset="H5T_CSET_ASCII" StrSize="H5T_VARIABLE" StrPad="H5T_STR_NULLTERM"/>
+                     </hdf5:AtomicType>
+                  </hdf5:DataType>
+                  <hdf5:Data>
+                     <hdf5:NoData/>
+                  </hdf5:Data>
+               </hdf5:Dataset>
+               <hdf5:Dataset Name="Map_Info" OBJ-XID="xid_10344" H5Path= "/CHEQ/Reflectance/Metadata/Coordinate_System/Map_Info" Parents="xid_4928" H5ParentPaths="/CHEQ/Reflectance/Metadata/Coordinate_System">
+                  <hdf5:StorageLayout>
+                     <hdf5:ContiguousLayout/>
+                  </hdf5:StorageLayout>
+                  <hdf5:FillValueInfo FillTime="FillOnAlloc" AllocationTime="Late">
+                     <hdf5:FillValue>
+                        <hdf5:Data>
+                           <!-- String fill values not yet implemented. -->
+                           <hdf5:NoData />
+                        </hdf5:Data>
+                     </hdf5:FillValue>
+                  </hdf5:FillValueInfo>
+                  <hdf5:Dataspace>
+                     <hdf5:ScalarDataspace />
+                  </hdf5:Dataspace>
+                  <hdf5:DataType>
+                     <hdf5:AtomicType>
+                        <hdf5:StringType Cset="H5T_CSET_ASCII" StrSize="H5T_VARIABLE" StrPad="H5T_STR_NULLTERM"/>
+                     </hdf5:AtomicType>
+                  </hdf5:DataType>
+                  <hdf5:Data>
+                     <hdf5:NoData/>
+                  </hdf5:Data>
+               </hdf5:Dataset>
+            </hdf5:Group>
+            <hdf5:Group Name="Logs" OBJ-XID="xid_10616" H5Path="/CHEQ/Reflectance/Metadata/Logs" Parents="xid_2864" H5ParentPaths="/CHEQ/Reflectance/Metadata" >
+               <hdf5:Dataset Name="Solar_Azimuth_Angle" OBJ-XID="xid_11320" H5Path= "/CHEQ/Reflectance/Metadata/Logs/Solar_Azimuth_Angle" Parents="xid_10616" H5ParentPaths="/CHEQ/Reflectance/Metadata/Logs">
+                  <hdf5:StorageLayout>
+                     <hdf5:ContiguousLayout/>
+                  </hdf5:StorageLayout>
+                  <hdf5:FillValueInfo FillTime="FillIfSet" AllocationTime="Late">
+                     <hdf5:FillValue>
+                        <hdf5:NoFill/>
+                     </hdf5:FillValue>
+                  </hdf5:FillValueInfo>
+                  <hdf5:Dataspace>
+                     <hdf5:ScalarDataspace />
+                  </hdf5:Dataspace>
+                  <hdf5:DataType>
+                     <hdf5:AtomicType>
+                        <hdf5:FloatType ByteOrder="LE" Size="8" SignBitLocation="63" ExponentBits="11" ExponentLocation="52" MantissaBits="52" MantissaLocation="0" />
+                     </hdf5:AtomicType>
+                  </hdf5:DataType>
+                  <hdf5:Data>
+                     <hdf5:NoData/>
+                  </hdf5:Data>
+               </hdf5:Dataset>
+               <hdf5:Dataset Name="Solar_Zenith_Angle" OBJ-XID="xid_11920" H5Path= "/CHEQ/Reflectance/Metadata/Logs/Solar_Zenith_Angle" Parents="xid_10616" H5ParentPaths="/CHEQ/Reflectance/Metadata/Logs">
+                  <hdf5:StorageLayout>
+                     <hdf5:ContiguousLayout/>
+                  </hdf5:StorageLayout>
+                  <hdf5:FillValueInfo FillTime="FillIfSet" AllocationTime="Late">
+                     <hdf5:FillValue>
+                        <hdf5:NoFill/>
+                     </hdf5:FillValue>
+                  </hdf5:FillValueInfo>
+                  <hdf5:Dataspace>
+                     <hdf5:ScalarDataspace />
+                  </hdf5:Dataspace>
+                  <hdf5:DataType>
+                     <hdf5:AtomicType>
+                        <hdf5:FloatType ByteOrder="LE" Size="8" SignBitLocation="63" ExponentBits="11" ExponentLocation="52" MantissaBits="52" MantissaLocation="0" />
+                     </hdf5:AtomicType>
+                  </hdf5:DataType>
+                  <hdf5:Data>
+                     <hdf5:NoData/>
+                  </hdf5:Data>
+               </hdf5:Dataset>
+            </hdf5:Group>
+            <hdf5:Group Name="Spectral_Data" OBJ-XID="xid_12192" H5Path="/CHEQ/Reflectance/Metadata/Spectral_Data" Parents="xid_2864" H5ParentPaths="/CHEQ/Reflectance/Metadata" >
+               <hdf5:Dataset Name="FWHM" OBJ-XID="xid_15160" H5Path= "/CHEQ/Reflectance/Metadata/Spectral_Data/FWHM" Parents="xid_12192" H5ParentPaths="/CHEQ/Reflectance/Metadata/Spectral_Data">
+                  <hdf5:StorageLayout>
+                     <hdf5:ChunkedLayout Ndims="1">
+                        <hdf5:ChunkDimension DimSize="426" />
+                        <hdf5:RequiredFilter>
+                              <hdf5:Deflate Level="9"/>
+                        </hdf5:RequiredFilter>
+                     </hdf5:ChunkedLayout>
+                  </hdf5:StorageLayout>
+                  <hdf5:FillValueInfo FillTime="FillIfSet" AllocationTime="Incremental">
+                     <hdf5:FillValue>
+                        <hdf5:NoFill/>
+                     </hdf5:FillValue>
+                  </hdf5:FillValueInfo>
+                  <hdf5:Dataspace>
+                     <hdf5:SimpleDataspace Ndims="1">
+                        <hdf5:Dimension  DimSize="426" MaxDimSize="426"/>
+                     </hdf5:SimpleDataspace>
+                  </hdf5:Dataspace>
+                  <hdf5:DataType>
+                     <hdf5:AtomicType>
+                        <hdf5:FloatType ByteOrder="LE" Size="8" SignBitLocation="63" ExponentBits="11" ExponentLocation="52" MantissaBits="52" MantissaLocation="0" />
+                     </hdf5:AtomicType>
+                  </hdf5:DataType>
+                  <hdf5:Data>
+                     <hdf5:NoData/>
+                  </hdf5:Data>
+               </hdf5:Dataset>
+               <hdf5:Dataset Name="Wavelength" OBJ-XID="xid_20758" H5Path= "/CHEQ/Reflectance/Metadata/Spectral_Data/Wavelength" Parents="xid_12192" H5ParentPaths="/CHEQ/Reflectance/Metadata/Spectral_Data">
+                  <hdf5:StorageLayout>
+                     <hdf5:ChunkedLayout Ndims="1">
+                        <hdf5:ChunkDimension DimSize="426" />
+                        <hdf5:RequiredFilter>
+                              <hdf5:Deflate Level="9"/>
+                        </hdf5:RequiredFilter>
+                     </hdf5:ChunkedLayout>
+                  </hdf5:StorageLayout>
+                  <hdf5:FillValueInfo FillTime="FillIfSet" AllocationTime="Incremental">
+                     <hdf5:FillValue>
+                        <hdf5:NoFill/>
+                     </hdf5:FillValue>
+                  </hdf5:FillValueInfo>
+                  <hdf5:Dataspace>
+                     <hdf5:SimpleDataspace Ndims="1">
+                        <hdf5:Dimension  DimSize="426" MaxDimSize="426"/>
+                     </hdf5:SimpleDataspace>
+                  </hdf5:Dataspace>
+                  <hdf5:DataType>
+                     <hdf5:AtomicType>
+                        <hdf5:FloatType ByteOrder="LE" Size="8" SignBitLocation="63" ExponentBits="11" ExponentLocation="52" MantissaBits="52" MantissaLocation="0" />
+                     </hdf5:AtomicType>
+                  </hdf5:DataType>
+                  <hdf5:Data>
+                     <hdf5:NoData/>
+                  </hdf5:Data>
+               </hdf5:Dataset>
+            </hdf5:Group>
+            <hdf5:Dataset Name="to-sensor_Azimuth_Angle" OBJ-XID="xid_25733" H5Path= "/CHEQ/Reflectance/Metadata/to-sensor_Azimuth_Angle" Parents="xid_2864" H5ParentPaths="/CHEQ/Reflectance/Metadata">
+               <hdf5:StorageLayout>
+                  <hdf5:ChunkedLayout Ndims="2">
+                     <hdf5:ChunkDimension DimSize="300" />
+                     <hdf5:ChunkDimension DimSize="300" />
+                     <hdf5:RequiredFilter>
+                           <hdf5:Deflate Level="9"/>
+                     </hdf5:RequiredFilter>
+                  </hdf5:ChunkedLayout>
+               </hdf5:StorageLayout>
+               <hdf5:FillValueInfo FillTime="FillIfSet" AllocationTime="Incremental">
+                  <hdf5:FillValue>
+                     <hdf5:NoFill/>
+                  </hdf5:FillValue>
+               </hdf5:FillValueInfo>
+               <hdf5:Dataspace>
+                  <hdf5:SimpleDataspace Ndims="2">
+                     <hdf5:Dimension  DimSize="300" MaxDimSize="300"/>
+                     <hdf5:Dimension  DimSize="300" MaxDimSize="300"/>
+                  </hdf5:SimpleDataspace>
+               </hdf5:Dataspace>
+               <hdf5:DataType>
+                  <hdf5:AtomicType>
+                     <hdf5:FloatType ByteOrder="LE" Size="4" SignBitLocation="31" ExponentBits="8" ExponentLocation="23" MantissaBits="23" MantissaLocation="0" />
+                  </hdf5:AtomicType>
+               </hdf5:DataType>
+               <hdf5:Data>
+                  <hdf5:NoData/>
+               </hdf5:Data>
+            </hdf5:Dataset>
+            <hdf5:Dataset Name="to-sensor_Zenith_Angle" OBJ-XID="xid_253659" H5Path= "/CHEQ/Reflectance/Metadata/to-sensor_Zenith_Angle" Parents="xid_2864" H5ParentPaths="/CHEQ/Reflectance/Metadata">
+               <hdf5:StorageLayout>
+                  <hdf5:ChunkedLayout Ndims="2">
+                     <hdf5:ChunkDimension DimSize="300" />
+                     <hdf5:ChunkDimension DimSize="300" />
+                     <hdf5:RequiredFilter>
+                           <hdf5:Deflate Level="9"/>
+                     </hdf5:RequiredFilter>
+                  </hdf5:ChunkedLayout>
+               </hdf5:StorageLayout>
+               <hdf5:FillValueInfo FillTime="FillIfSet" AllocationTime="Incremental">
+                  <hdf5:FillValue>
+                     <hdf5:NoFill/>
+                  </hdf5:FillValue>
+               </hdf5:FillValueInfo>
+               <hdf5:Dataspace>
+                  <hdf5:SimpleDataspace Ndims="2">
+                     <hdf5:Dimension  DimSize="300" MaxDimSize="300"/>
+                     <hdf5:Dimension  DimSize="300" MaxDimSize="300"/>
+                  </hdf5:SimpleDataspace>
+               </hdf5:Dataspace>
+               <hdf5:DataType>
+                  <hdf5:AtomicType>
+                     <hdf5:FloatType ByteOrder="LE" Size="4" SignBitLocation="31" ExponentBits="8" ExponentLocation="23" MantissaBits="23" MantissaLocation="0" />
+                  </hdf5:AtomicType>
+               </hdf5:DataType>
+               <hdf5:Data>
+                  <hdf5:NoData/>
+               </hdf5:Data>
+            </hdf5:Dataset>
+         </hdf5:Group>
+         <hdf5:Dataset Name="Reflectance_Data" OBJ-XID="xid_499319" H5Path= "/CHEQ/Reflectance/Reflectance_Data" Parents="xid_1832" H5ParentPaths="/CHEQ/Reflectance">
+            <hdf5:StorageLayout>
+               <hdf5:ChunkedLayout Ndims="3">
+                  <hdf5:ChunkDimension DimSize="50" />
+                  <hdf5:ChunkDimension DimSize="50" />
+                  <hdf5:ChunkDimension DimSize="426" />
+                  <hdf5:RequiredFilter>
+                        <hdf5:Deflate Level="9"/>
+                  </hdf5:RequiredFilter>
+               </hdf5:ChunkedLayout>
+            </hdf5:StorageLayout>
+            <hdf5:FillValueInfo FillTime="FillOnAlloc" AllocationTime="Incremental">
+               <hdf5:FillValue>
+                  <hdf5:Data>
+                     <hdf5:DataFromFile>
+                     "0"
+                     </hdf5:DataFromFile>
+                  </hdf5:Data>
+               </hdf5:FillValue>
+            </hdf5:FillValueInfo>
+            <hdf5:Dataspace>
+               <hdf5:SimpleDataspace Ndims="3">
+                  <hdf5:Dimension  DimSize="300" MaxDimSize="300"/>
+                  <hdf5:Dimension  DimSize="300" MaxDimSize="300"/>
+                  <hdf5:Dimension  DimSize="426" MaxDimSize="426"/>
+               </hdf5:SimpleDataspace>
+            </hdf5:Dataspace>
+            <hdf5:DataType>
+               <hdf5:AtomicType>
+                  <hdf5:IntegerType ByteOrder="LE" Sign="true" Size="2" />
+               </hdf5:AtomicType>
+            </hdf5:DataType>
+            <hdf5:Data>
+               <hdf5:NoData/>
+            </hdf5:Data>
+         </hdf5:Dataset>
+      </hdf5:Group>
+   </hdf5:Group>
+</hdf5:RootGroup>
+</hdf5:HDF5-File>
