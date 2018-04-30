@@ -182,6 +182,3 @@ def apply_topo_coeffs(hyObj,output_name, topo_coeffs,solar_az,solar_zn,surfaceno
 
     writer.close()
         
-        
-    
-       
