@@ -1,4 +1,4 @@
-import numpy as np
+import numpy as np,gdal
 from ..file_io import *
 import pandas as pd
 
@@ -67,7 +67,6 @@ def apply_plsr(hyObj,plsr_coeffs):
     # Empty array to hold trait estimates
     trait_arr = np.zeros((hyObj.lines,hyObj.columns,2))
     
-    start = time.time()
     while not iterator.complete:
         chunk = iterator.read_next()      
 
@@ -93,21 +92,16 @@ def apply_plsr(hyObj,plsr_coeffs):
     return trait_arr
 
 
-
-def apply_topo(hyObj,topo_coeffs):  
-    return None
-    
-    
-    
-    
-    
-    
-
-def apply_brdf(hyObj,brdf_coeffs):
-    return None
-
         
-        
-        
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
         
         

@@ -1,7 +1,5 @@
-
 from ..file_io import *
 import pandas as pd, sys
-
 import numpy as np
 
 """
@@ -57,9 +55,10 @@ def generate_topo_coeffs_img(hyObj, solar_az,solar_zn, surfacenormal_az , surfac
     
     
     # Generate the cosine i
-    # the cosine of the incidence angle (i ), defined as the angle between the normal to the pixel surface and the solar zenith direction;
+    # the cosine of the incidence angle (i ), 
+    # defined as the angle between the normal to the pixel surface and the solar zenith direction;
     if cos_i is None:
-      print("calculating incidence angle...")
+      print("Calculating incidence angle...")
       cos_i = cal_cosine_i(solar_zn, solar_az, surfacenormal_az , surfacenormal_zn)
 
     # Mask kernels
@@ -85,16 +84,12 @@ def generate_topo_coeffs_img(hyObj, solar_az,solar_zn, surfacenormal_az , surfac
         # Eq 8. Soenen et al., IEEE TGARS 2005
         C= intercept/slope
 
-        
         # set a large number if slope is zero
         if not np.isfinite(C):
           C = 100000.0
           
         topo_c_coeffs.append([C])
         
-    #print( zip(hyObj.wavelengths,topo_c_coeffs))
-    #print(hyObj.wavelengths)
-
     # Store coeffs in a pandas dataframe
     topoDF =  pd.DataFrame.from_dict(dict(zip(hyObj.wavelengths,topo_c_coeffs))).T
     topoDF.columns = ['c']
@@ -159,7 +154,6 @@ def apply_topo_coeffs(hyObj,output_name, topo_coeffs,solar_az,solar_zn,surfaceno
 
     while not iterator.complete:
         chunk = iterator.read_next()            
-        #print(chunk.shape)
         # Chunk Array indices
         line_start =iterator.current_line 
         line_end = iterator.current_line + chunk.shape[0]

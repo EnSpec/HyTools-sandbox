@@ -30,7 +30,7 @@ IEEE Transactions on Geoscience and Remote Sensing, 53(11), 5814-5823.
 
 BRDF correction consists of the following steps:
     
-    1. Stratified random sampling of the image(s) based on predefined scattering classes
+    1. OPTIONAL: Stratified random sampling of the image(s) based on predefined scattering classes
     2. Regression modeling per scattering class, per wavelength
             reflectance = fIso + fVol*kVol +  fGeo*kGeo
             (eq 2. Weyermann et al. IEEE-TGARS 2015)
@@ -40,7 +40,6 @@ BRDF correction consists of the following steps:
 
 def generate_brdf_coeffs_img(hyObj,solar_az,solar_zn,sensor_az,sensor_zn,ross,li):
     '''Generate BRDF coefficients for a single image.
-    
     
     Parameters
     ----------
@@ -64,7 +63,6 @@ def generate_brdf_coeffs_img(hyObj,solar_az,solar_zn,sensor_az,sensor_zn,ross,li
                 BRDF coefficients
     '''
     
-    
     # Generate scattering kernels
     k_vol = generate_volume_kernel(solar_az,solar_zn,sensor_az,sensor_zn, ross = ross)
     k_geom = generate_geom_kernel(solar_az,solar_zn,sensor_az,sensor_zn,li = li)
@@ -76,7 +74,8 @@ def generate_brdf_coeffs_img(hyObj,solar_az,solar_zn,sensor_az,sensor_zn,ross,li
     # Reshape for regression
     k_vol = np.expand_dims(k_vol,axis=1)
     k_geom = np.expand_dims(k_geom,axis=1)
-    X = np.concatenate([k_vol,k_geom,np.ones(k_geom.shape)],axis=1)
+    #X = np.concatenate([k_vol,k_geom,np.ones(k_geom.shape)],axis=1)
+    X = np.concatenate([k_vol,np.ones(k_geom.shape)],axis=1)
 
     iterator = hyObj.iterate(by = 'band')
     brdf_coeffs = []
@@ -89,7 +88,8 @@ def generate_brdf_coeffs_img(hyObj,solar_az,solar_zn,sensor_az,sensor_zn,ross,li
     
     # Store coeffs in a pandas dataframe
     brdfDF =  pd.DataFrame.from_dict(dict(zip(hyObj.wavelengths,brdf_coeffs))).T
-    brdfDF.columns = ['k_vol','k_geom','k_iso']
+    #brdfDF.columns = ['k_vol','k_geom','k_iso']
+    brdfDF.columns = ['k_vol','k_iso']
 
     del k_vol, k_geom
 
@@ -170,8 +170,10 @@ def apply_brdf_coeffs(hyObj,output_name,brdf_coeffs,solar_az,solar_zn,sensor_az,
 
         # Apply brdf correction 
         # eq 5. Weyermann et al. IEEE-TGARS 2015)
-        brdf = np.einsum('i,jk-> jki', brdf_df.k_vol,k_vol_chunk) + np.einsum('i,jk-> jki', brdf_df.k_geom,k_geom_chunk)  + brdf_df.k_iso.values
-        brdf_nadir = np.einsum('i,jk-> jki', brdf_df.k_vol,k_vol_nadir_chunk) + np.einsum('i,jk-> jki', brdf_df.k_geom,k_geom_nadir_chunk)  + brdf_df.k_iso.values
+        #brdf = np.einsum('i,jk-> jki', brdf_df.k_vol,k_vol_chunk) + np.einsum('i,jk-> jki', brdf_df.k_geom,k_geom_chunk)  + brdf_df.k_iso.values
+        #brdf_nadir = np.einsum('i,jk-> jki', brdf_df.k_vol,k_vol_nadir_chunk) + np.einsum('i,jk-> jki', brdf_df.k_geom,k_geom_nadir_chunk)  + brdf_df.k_iso.values
+        brdf = np.einsum('i,jk-> jki', brdf_df.k_vol,k_vol_chunk)  + brdf_df.k_iso.values
+        brdf_nadir = np.einsum('i,jk-> jki', brdf_df.k_vol,k_vol_nadir_chunk)  + brdf_df.k_iso.values
         correctionFactor = brdf_nadir/brdf
         brdf_chunk = chunk* correctionFactor
         

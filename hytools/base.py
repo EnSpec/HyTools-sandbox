@@ -50,6 +50,7 @@ def openENVI(srcFile):
     hyObj.file_name = srcFile
     hyObj.bad_bands = header_dict['bbl']
     
+        
     if header_dict["interleave"] == 'bip':    
         hyObj.shape = (hyObj.lines, hyObj.columns, hyObj.bands)
     elif header_dict["interleave"] == 'bil':    
