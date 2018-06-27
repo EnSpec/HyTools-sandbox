@@ -40,7 +40,7 @@ def image_to_traits(args):
     
     vnorm= args.vnorm
     if vnorm:
-        args.vnorm_scaler = 1
+        vnorm_scaler =args.vnorm_scaler 
     rgbim = args.rgbim
 
     print("Beginning trait estimation.")
