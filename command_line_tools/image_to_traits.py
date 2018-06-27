@@ -243,21 +243,25 @@ rgbim = True
 ross = 'thick'
 li = 'dense'
 
-image_to_traits(image,observables,mask_type,mask_threshold,topo_correct,brdf_correct,vnorm,rgbim,traits)
+
+
+image_to_traits(image,observables,mask_type,mask_threshold,topo_correct,brdf_correct,vnorm,rgbim,traits):
 #
+    
+    
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--in", help="Input image pathname", action='store_true')
-parser.add_argument("--obs", help="Input observables pathname", action='store_true')
-parser.add_argument("--brdf", help="Perform BRDF correction",action='store_true')
-parser.add_argument("--topo", help="Perform topographic correction", action='store_true')
-parser.add_argument("--mask", help="Image mask type to use", action='store_true')
-parser.add_argument("--mask_threshold", help="Mask threshold value", action='store_true')
-parser.add_argument("--vnorm", help="Vector normalize image", action='store_true')
-parser.add_argument("--vnorm_scaler", help="Scaling value for vecotr normalization", action='store_true')
-parser.add_argument("--coeffs", help="Trait coefficients directory", action='store_true')
-
-
+#parser.add_argument("--in", help="Input image pathname", action='store_true')
+#parser.add_argument("--obs", help="Input observables pathname", action='store_true')
+#parser.add_argument("--brdf", help="Perform BRDF correction",action='store_true')
+#parser.add_argument("--topo", help="Perform topographic correction", action='store_true')
+#parser.add_argument("--mask", help="Image mask type to use", action='store_true')
+#parser.add_argument("--mask_threshold", help="Mask threshold value", action='store_true')
+#parser.add_argument("--vnorm", help="Vector normalize image", action='store_true')
+#parser.add_argument("--vnorm_scaler", help="Scaling value for vecotr normalization", action='store_true')
+#parser.add_argument("--coeffs", help="Trait coefficients directory", action='store_true')
+#
+#
 
 
 
