@@ -1,7 +1,7 @@
 import numpy as np
 from ..file_io import *
 
-def __gaussian(x,mu,fwhm):
+def gaussian(x,mu,fwhm):
     """Return a gaussian distribution.
     
     Parameters
@@ -18,7 +18,7 @@ def __gaussian(x,mu,fwhm):
     c = fwhm/(2* np.sqrt(2*np.log(2)))
     return np.exp(-1*((x-mu)**2/(2*c**2)))
 
-def __resample_coeff_single(srcWaves, dstWaves,dstFWHMs):
+def resample_coeff_single(srcWaves, dstWaves,dstFWHMs):
     """ Return a set of coeffiencients for spectrum resampling
     
     Given a set of source wavelengths, destination wavelengths and FWHMs this
@@ -43,15 +43,15 @@ def __resample_coeff_single(srcWaves, dstWaves,dstFWHMs):
     dstMatrix = []
     #oneNM = np.arange(280,2600)
     for dstWave,dstFWHM in zip(dstWaves,dstFWHMs):
-        a = __gaussian(srcWaves -.5,dstWave,dstFWHM)
-        b = __gaussian(srcWaves +.5,dstWave,dstFWHM) 
+        a =  gaussian(srcWaves -.5,dstWave,dstFWHM)
+        b =  gaussian(srcWaves +.5,dstWave,dstFWHM) 
         areas = (a +b)/2
         dstMatrix.append(np.divide(areas,np.sum(areas)))
     dstMatrix = np.array(dstMatrix) 
     
     return dstMatrix.T
 
-def __matrix_inverse(srcWaves,srcFWHMs,dstWaves,dstFWHMs):
+def matrix_inverse(srcWaves,srcFWHMs,dstWaves,dstFWHMs):
     """ Return a set of coeffiencients for spectrum resampling
     
     Given a set of source and destination wavelengths and FWHMs this
@@ -87,8 +87,8 @@ def __matrix_inverse(srcWaves,srcFWHMs,dstWaves,dstFWHMs):
 
     for dstWave,dstFWHM in zip(dstWaves,dstFWHMs):
         #print dstWave,dstFWHM
-        a = __gaussian(oneNM -.5,dstWave,dstFWHM)
-        b = __gaussian(oneNM +.5,dstWave,dstFWHM) 
+        a =  gaussian(oneNM -.5,dstWave,dstFWHM)
+        b =  gaussian(oneNM +.5,dstWave,dstFWHM) 
         areas = (a +b)/2
         dstMatrix.append(np.divide(areas,np.sum(areas)))
 
@@ -98,8 +98,8 @@ def __matrix_inverse(srcWaves,srcFWHMs,dstWaves,dstFWHMs):
 
     for srcWave,srcFWHM in zip(srcWaves,srcFWHMs):
 
-        a = __gaussian(oneNM -.5,srcWave,srcFWHM)
-        b = __gaussian(oneNM +.5,srcWave,srcFWHM) 
+        a =  gaussian(oneNM -.5,srcWave,srcFWHM)
+        b =  gaussian(oneNM +.5,srcWave,srcFWHM) 
         areas = (a +b)/2
         srcMatrix.append(np.divide(areas,np.sum(areas)))        
 
@@ -112,7 +112,7 @@ def __matrix_inverse(srcWaves,srcFWHMs,dstWaves,dstFWHMs):
     
     return coef.T
 
-def __resample_coeff(srcWaves,srcFWHMs,dstWaves,dstFWHMs, spacing = 1):
+def resample_coeff(srcWaves,srcFWHMs,dstWaves,dstFWHMs, spacing = 1):
     """ Return a set of coeffiencients for spectrum resampling
     
     Given a set of source and destination wavelengths and FWHMs this
@@ -139,8 +139,8 @@ def __resample_coeff(srcWaves,srcFWHMs,dstWaves,dstFWHMs, spacing = 1):
     dstMatrix = []
     oneNM = np.arange(280,2600)
     for dstWave,dstFWHM in zip(dstWaves,dstFWHMs):
-        a = __gaussian(oneNM -.5,dstWave,dstFWHM)
-        b = __gaussian(oneNM +.5,dstWave,dstFWHM) 
+        a =  gaussian(oneNM -.5,dstWave,dstFWHM)
+        b =  gaussian(oneNM +.5,dstWave,dstFWHM) 
         areas = (a +b)/2
         dstMatrix.append(np.divide(areas,np.sum(areas)))
     dstMatrix = np.array(dstMatrix)
@@ -149,7 +149,7 @@ def __resample_coeff(srcWaves,srcFWHMs,dstWaves,dstFWHMs, spacing = 1):
     # function at 1nm resolution
     srcMatrix = []
     for srcWave,srcFWHM in zip(srcWaves,srcFWHMs):
-        srcMatrix.append(__gaussian(oneNM ,srcWave,srcFWHM))
+        srcMatrix.append( gaussian(oneNM ,srcWave,srcFWHM))
     srcMatrix = np.array(srcMatrix)
    
     # Calculate the relative contribution of each source response function
@@ -165,7 +165,7 @@ def __resample_coeff(srcWaves,srcFWHMs,dstWaves,dstFWHMs, spacing = 1):
 
     
 
-def  __est_fwhm(hyObj, dstWaves, dstFWHMs):
+def est_fwhm(hyObj, dstWaves, dstFWHMs):
     """
     Acquire source wavelength information from source dataset, and estimate the list of destination full width half maxes if they are not specify by the user.
     
@@ -198,20 +198,21 @@ def  __est_fwhm(hyObj, dstWaves, dstFWHMs):
     return (srcWaves, srcFWHMs, dstFWHMs)
     
     
-def __est_transform_matrix(srcWaves, dstWaves, srcFWHMs, dstFWHMs, method_code):
+def est_transform_matrix(srcWaves, dstWaves, srcFWHMs, dstFWHMs, method_code):
 
     if method_code==0:
-        coeffs = __resample_coeff_single(srcWaves,dstWaves,dstFWHMs)
+        coeffs =  resample_coeff_single(srcWaves,dstWaves,dstFWHMs)
     elif method_code==1:
-        coeffs = __resample_coeff(srcWaves,srcFWHMs,dstWaves,dstFWHMs, spacing = 1)
+        coeffs =  resample_coeff(srcWaves,srcFWHMs,dstWaves,dstFWHMs, spacing = 1)
     else:
-        coeffs = __matrix_inverse(srcWaves,srcFWHMs,dstWaves,dstFWHMs)
+        coeffs =  matrix_inverse(srcWaves,srcFWHMs,dstWaves,dstFWHMs)
            
     return coeffs
-    
 
-def resample(hyObj, output_name, dstWaves, method="single_FWHM",  dstFWHMs = None):
-    """.
+
+
+def resample_img(hyObj, output_name, dstWaves, method="single_FWHM",  dstFWHMs = None):
+    """
 
     Parameters
     ----------
@@ -232,14 +233,14 @@ def resample(hyObj, output_name, dstWaves, method="single_FWHM",  dstFWHMs = Non
         two_FWHM
             interpolation with both srcFWHMs and dstFWHMs
         two_FWHM_minnorm
-            Minimum-norm least squares problem (underdetermined case while resampling to 1nm) solved by pseudoinverse, with both srcFWHMs and dstFWHMs
+            Minimum-norm least squares problem (underdetermined case while resampling to 1nm) solved by pseudoinverse, 
+            with both srcFWHMs and dstFWHMs
             
         All methods require the list of source wavelength centers (srcWaves), which should be stored in hyObj.
         
     Returns
     -------
-    None
-            
+    None     
     """
 
     # Dictionary of all methods
@@ -248,11 +249,11 @@ def resample(hyObj, output_name, dstWaves, method="single_FWHM",  dstFWHMs = Non
                             "two_FWHM_minnorm": 2
                            }
                  
-    srcWaves, srcFWHMs, dstFWHMs = __est_fwhm(hyObj, dstWaves, dstFWHMs)
+    srcWaves, srcFWHMs, dstFWHMs =  est_fwhm(hyObj, dstWaves, dstFWHMs)
     
     band_mask = [x==1 for x in hyObj.bad_bands]
     
-    coeffs = __est_transform_matrix(srcWaves, dstWaves, srcFWHMs, dstFWHMs, methodDict[method])
+    coeffs =  est_transform_matrix(srcWaves, dstWaves, srcFWHMs, dstFWHMs, methodDict[method])
 
     # update destination bad band list
     new_badband = np.dot(band_mask,coeffs)
@@ -283,7 +284,6 @@ def resample(hyObj, output_name, dstWaves, method="single_FWHM",  dstFWHMs = Non
         resampled_chunk = np.dot(chunk[:,:,:], coeffs)         
         #resampled_chunk[ resampled_chunk <1000 ] = hyObj.no_data 
         writer.write_chunk(resampled_chunk,iterator.current_line,iterator.current_column)
-
 
     writer.close()    
     

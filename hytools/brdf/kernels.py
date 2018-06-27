@@ -25,14 +25,7 @@ def generate_geom_kernel(solar_az,solar_zn,sensor_az,sensor_zn,li):
     
     Parameters
     ----------
-    solar_az:   float or np.array
-                Solar zenith angle in radians
-    solar_zn:   float or np.array 
-                Solar zenith angle in radians
-    sensor_az:  np.array
-                Sensor view azimuth angle in radians
-    sensor_zn:  np.array
-                Sensor view zenith angle in radians          
+    hyObj : HyTools file object with observables loaded.       
     li :        str 
                 Geometric scattering kernel type [dense,sparse]
     

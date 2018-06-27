@@ -17,34 +17,59 @@ TOPO correction consists of the following steps:
     3. apply C-Correction value to the image
 """
 
-def cal_cosine_i(solar_zn, solar_az, surfacenormal_az , surfacenormal_zn):
+def calc_cosine_i(solar_zn, solar_az, aspect ,slope):
   """
    All angles are in radians
   """
-  relAz = surfacenormal_az - solar_az
-  cosine_i = np.cos(solar_zn)*np.cos(surfacenormal_zn) + np.sin(solar_zn)*np.sin(surfacenormal_zn)*  np.cos(relAz)
+  relAz = aspect - solar_az
+  cosine_i = np.cos(solar_zn)*np.cos(slope) + np.sin(solar_zn)*np.sin(slope)*  np.cos(relAz)
 
   return cosine_i
 
+def generate_topo_coeff_band(band,mask,cos_i):
+    '''Return the topographic correction coefficients for the input band.
+    
+    Parameters
+    ----------
+    band:       m x n np.array
+                Image band
+    mask:       m x n np.array
+                Binary image mask
+    k_vol:      m x n np.array
+                Cosine i image
+    Returns
+    -------
+    C : float
+                Topographic correction coefficient
+    '''
+    
+    # Mask cosine i image
+    cos_i = cos_i[mask]
+    # Reshape for regression
+    cos_i = np.expand_dims(cos_i,axis=1)
 
-def generate_topo_coeffs_img(hyObj, solar_az,solar_zn, surfacenormal_az , surfacenormal_zn, cos_i = None):
+    X = np.concatenate([cos_i,np.ones(cos_i.shape)],axis=1)
+    y = band[mask]
+    
+    # Eq 7. Soenen et al., IEEE TGARS 2005
+    slope, intercept = np.linalg.lstsq(X, y)[0].flatten()
+    # Eq 8. Soenen et al., IEEE TGARS 2005
+    C= intercept/slope
+
+    # Set a large number if slope is zero
+    if not np.isfinite(C):
+      C = 100000.0
+      
+    return C
+
+def generate_topo_coeffs_img(hyObj,cos_i = None):
     """
     Generate TOPO Correction coefficients for a single image.
-    
     
     Parameters
     ----------
     hyObj:      hyTools file object
-    solar_az:   float or np.array
-                Solar zenith angle in radians
-    solar_zn:   float or np.array 
-                Solar zenith angle in radians
-    surfacenormal_az:  np.array
-                Terrain surface normal azimuth angle in radians (Aspect of terrain)
-    surfacenormal_zn:  np.array
-                Terrain surface normal zenith angle in radians (Slope of terrain)   
-
-    cos_i:  np.array
+    cos_i:      np.array
                 The cosine of the incidence angle (i ), defined as the angle between the normal to the pixel surface and the solar zenith direction
 
     Returns
@@ -53,54 +78,30 @@ def generate_topo_coeffs_img(hyObj, solar_az,solar_zn, surfacenormal_az , surfac
                 TOPO coefficients
     """
     
-    
     # Generate the cosine i
     # the cosine of the incidence angle (i ), 
     # defined as the angle between the normal to the pixel surface and the solar zenith direction;
     if cos_i is None:
       print("Calculating incidence angle...")
-      cos_i = cal_cosine_i(solar_zn, solar_az, surfacenormal_az , surfacenormal_zn)
-
-    # Mask kernels
-    cos_i = cos_i[hyObj.mask]
-
-
-    # Reshape for regression
-    cos_i = np.expand_dims(cos_i,axis=1)
-
-    X = np.concatenate([cos_i,np.ones(cos_i.shape)],axis=1)
+      cos_i =  calc_cosine_i(hyObj.solar_zn, hyObj.solar_az, hyObj.aspect , hyObj.slope)
 
     iterator = hyObj.iterate(by = 'band')
-    topo_c_coeffs = []
+    topo_coeffs = []
     
     while not iterator.complete:        
         band = iterator.read_next()    
-        
-        y = band[hyObj.mask]
-        
-        # Eq 7. Soenen et al., IEEE TGARS 2005
-        slope, intercept = np.linalg.lstsq(X, y)[0].flatten()
-        
-        # Eq 8. Soenen et al., IEEE TGARS 2005
-        C= intercept/slope
-
-        # set a large number if slope is zero
-        if not np.isfinite(C):
-          C = 100000.0
-          
-        topo_c_coeffs.append([C])
+        topo_coeffs.append([generate_topo_coeff_band(band,hyObj.mask,cos_i)])
         
     # Store coeffs in a pandas dataframe
-    topoDF =  pd.DataFrame.from_dict(dict(zip(hyObj.wavelengths,topo_c_coeffs))).T
-    topoDF.columns = ['c']
+    topo_df =  pd.DataFrame(topo_coeffs, index=  hyObj.wavelengths, columns = ['c'])
 
     del cos_i
+    return topo_df
 
-    return topoDF
 
 
-def apply_topo_coeffs(hyObj,output_name, topo_coeffs,solar_az,solar_zn,surfacenormal_az , surfacenormal_zn, cos_i = None):
-    """Apply TOPO Correction coeffients to an image.
+def topo_correct_img(hyObj,output_name,cos_i = None):
+    """Topographically correct an image.
 
     Parameters
     ----------
@@ -108,38 +109,29 @@ def apply_topo_coeffs(hyObj,output_name, topo_coeffs,solar_az,solar_zn,surfaceno
                 Data spectrum.
     output_name: str
                 Path name for TOPO corrected file.
-    topo_coeffs: 
-                Path name for TOPO corrected file.
-    solar_az:   float or np.array
-                Solar zenith angle in radians
-    solar_zn:   float or np.array 
-                Solar zenith angle in radians
-    surfacenormal_az:  np.array
-                Terrain surface normal azimuth angle in radians (Aspect of terrain)
-    surfacenormal_zn:  np.array
-                Terrain surface normal zenith angle in radians (Slope of terrain)     
-
     cos_i:  np.array
-                The cosine of the incidence angle (i ), defined as the angle between the normal to the pixel surface and the solar zenith direction
+                The cosine of the incidence angle (i ), 
+                defined as the angle between the normal to the pixel surface and the solar zenith direction
    
     Returns
     -------
     None
         
     """
-    # Load TOPO coefficents to pandas dataframe
-    topo_df =pd.read_csv(topo_coeffs,index_col = 0)
-    
+
     # Generate the cosine i
     # the cosine of the incidence angle (i ), defined as the angle between the normal to the pixel surface and the solar zenith direction;
     if cos_i is None:
-      print("calculating incidence angle...")
-      cos_i = cal_cosine_i(solar_zn, solar_az, surfacenormal_az , surfacenormal_zn)
+      print("Calculating incidence angle...")
+      cos_i =  calc_cosine_i(hyObj.solar_zn, hyObj.solar_az, hyObj.aspect , hyObj.slope)
     
     # Eq 11. Soenen et al., IEEE TGARS 2005
     # cos(alpha)* cos(theta)
-    # alpha -- slope (surfacenormal_zn), theta -- solar zenith angle (solar_zn)
-    c1 = np.cos(solar_zn) * np.cos(surfacenormal_zn)
+    # alpha -- slope (slope), theta -- solar zenith angle (solar_zn)
+    c1 = np.cos(hyObj.solar_zn) * np.cos(hyObj.slope)
+    
+    #Calcualate topographic correction coefficients for all bands
+    topo_df = generate_topo_coeffs_img(hyObj,cos_i = None)
     
     # Create writer object
     if  hyObj.file_type == "ENVI":
@@ -148,7 +140,6 @@ def apply_topo_coeffs(hyObj,output_name, topo_coeffs,solar_az,solar_zn,surfaceno
         writer = None
     else:
         print("ERROR: File format not recognized.")
-
 
     iterator = hyObj.iterate(by = 'chunk')
 

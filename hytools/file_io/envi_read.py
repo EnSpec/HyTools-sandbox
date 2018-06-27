@@ -194,7 +194,7 @@ def parse_ENVI_header(hdrFile):
                  "interleave": "str",
                  "lines": "int",
                  "map info": "list_str",
-                 "pixel size": "float",
+                 "pixel size": "list_float",
                  "projection info": "str",
                  "read procedures": "str",
                  "reflectance scale factor": "float",
@@ -223,7 +223,6 @@ def parse_ENVI_header(hdrFile):
     while line :
         if "=" in line:
             key,value = line.split("=",1)
-            
             # Add field not in ENVI default list
             if key.strip() not in fieldDict.keys():
                 fieldDict[key.strip()] = "str"

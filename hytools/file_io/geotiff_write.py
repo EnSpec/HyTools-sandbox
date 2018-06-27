@@ -30,9 +30,8 @@ def array_to_geotiff(array,hyObj,dstFile):
         print("ERROR: File format not recognized.")
         return
     
-
     datatype_dict = {np.dtype('int16'): gdal.GDT_Int16,
-                     np.dtype('int32'): gdal.GDT_Int16,
+                     np.dtype('int32'): gdal.GDT_Int32,
                      np.dtype('float32'): gdal.GDT_Float32,
                      np.dtype('float64'): gdal.GDT_Float64,
                      }
