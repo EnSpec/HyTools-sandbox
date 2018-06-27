@@ -34,6 +34,10 @@ def image_to_traits(args):
     if brdf_correct:
        li,ross =  args.kernels
     traits = glob.glob("%s/*.csv" % args.coeffs)
+    if len(traits) == 0:
+        print('No trait models found in input directory. Exiting.')
+        return
+    
     vnorm= args.vnorm
     if vnorm:
         args.vnorm_scaler = 1
@@ -267,7 +271,7 @@ if __name__== "__main__":
     args = parser.parse_args()
     image_to_traits(args)
 
-#python image_to_traits.py --img /data/aviris/f140414t01p00r08_refl_hpc18_v1 --obs /data/aviris/f140414t01p00r08_obs_hpc18_v1 --brdf --kernels dense thick --topo --mask --mask_threshold .5 --rgbim --vnorm --vnorm_scaler 1 --coeffs /home/adam/Dropbox/projects/hyTools/PLSR_Hyspiri_test/
+#python image_to_traits.py --img /data/aviris/f140414t01p00r08_refl_hpc18_v1 --obs /data/aviris/f140414t01p00r08_obs_hpc18_v1 --brdf --kernels dense thick --topo --mask --mask_threshold .5 --rgbim --vnorm --vnorm_scaler 1 --coeffs /home/adam/Dropbox/projects/hyTools/PLSR_Hyspiri_test
 
 
 
