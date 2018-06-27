@@ -1,4 +1,4 @@
-import argparse,gdal,copy
+import argparse,gdal,copy,sys,warnings
 import numpy as np, os,pandas as pd
 import glob
 import hytools as ht
@@ -11,44 +11,64 @@ from hytools.file_io import array_to_geotiff
 home = os.path.expanduser("~")
 
 
+warnings.filterwarnings("ignore")
+
 def progbar(curr, total, full_progbar):
     frac = curr/total
     filled_progbar = round(frac*full_progbar)
     print('\r', '#'*filled_progbar + '-'*(full_progbar-filled_progbar), '[{:>7.2%}]'.format(frac), end='')
 
-def image_to_traits(image,observables,mask_type,mask_threshold,topo_correct,brdf_correct,vnorm,rgbim,traits):
+def image_to_traits(args):
     '''
     Perform in memory trait estimation.
     '''
     
+    # Parge arguments
+    image = args.img
+    observables = args.obs
+    mask = args.mask
+    if mask:
+        mask_threshold = args.mask_threshold
+    topo_correct = args.topo
+    brdf_correct = args.brdf
+    if brdf_correct:
+       li,ross =  args.kernels
+    traits = glob.glob("%s/*.csv" % args.coeffs)
+    vnorm= args.vnorm
+    if vnorm:
+        args.vnorm_scaler = 1
+    rgbim = args.rgbim
+
+    print("Beginning trait estimation.")
+
+    #Load data objects memory
     if image.endswith(".h5"):
         hyObj = ht.openHDF(image,load_obs = True)
         hyObj.create_bad_bands([[300,400],[1330,1430],[1800,1960],[2450,2600]])
     else:
         hyObj = ht.openENVI(image)
         hyObj.load_obs(observables)
-
     hyObj.load_data()
     
     # Generate mask
-    if mask_type == "ndvi":
+    if mask:
         ir = hyObj.get_wave(850)
         red = hyObj.get_wave(665)
         ndvi = (ir-red)/(ir+red)
         mask = (ndvi > mask_threshold) & (ir != hyObj.no_data)
         hyObj.mask = mask 
         del ir,red,ndvi
-    elif mask_type == "none":
+    else:
         print("Warning no mask specified, results may be unreliable!")
 
     # Generate cosine i and c1 image for topographic correction
-    if topo_correct == True:
+    if topo_correct:
         cos_i =  calc_cosine_i(hyObj.solar_zn, hyObj.solar_az, hyObj.azimuth , hyObj.slope)
         c1 = np.cos(hyObj.solar_zn) * np.cos( hyObj.slope)
         topo_coeffs= []
            
     # Gernerate scattering kernel images for brdf correction
-    if brdf_correct == True:
+    if brdf_correct:
         k_vol = generate_volume_kernel(hyObj.solar_az,hyObj.solar_zn,hyObj.sensor_az,hyObj.sensor_zn, ross = ross)
         k_geom = generate_geom_kernel(hyObj.solar_az,hyObj.solar_zn,hyObj.sensor_az,hyObj.sensor_zn,li = li)
         k_vol_nadir = generate_volume_kernel(hyObj.solar_az,hyObj.solar_zn,hyObj.sensor_az,0, ross = ross)
@@ -154,11 +174,11 @@ def image_to_traits(image,observables,mask_type,mask_threshold,topo_correct,brdf
         
         
         # Resample data
-        if resample == True:            
+        if resample:            
             chunk = np.dot(chunk[:,:,:], resampling_coeffs) 
         
         # Export RGBIM image
-        if rgbim == True:
+        if rgbim:
             dstFile = image + '_rgbim.tif'
             if line_start + col_start == 0:
                 driver = gdal.GetDriverByName("GTIFF")
@@ -181,7 +201,7 @@ def image_to_traits(image,observables,mask_type,mask_threshold,topo_correct,brdf
             rgbi_geotiff = None
         
         # Vector normalize data
-        if vnorm == True:            
+        if vnorm:            
             chunk = vector_normalize_chunk(chunk,[True for x in range(sum(hyObj_resamp.bad_bands))],vnorm_scaler)
         
         # Cycle through trait models 
@@ -229,39 +249,32 @@ def image_to_traits(image,observables,mask_type,mask_threshold,topo_correct,brdf
             trait_geotiff = None
 
 
-
-image = "/data/tmp/NEON_D05_CHEQ_DP1_20170911_183324_reflectance.h5"
-observables = "/data/aviris/ang20150901t155015_obs_ort"
-mask_type = "ndvi"
-mask_threshold = .5
-topo_correct = True
-brdf_correct = True
-traits = glob.glob("%s/Dropbox/projects/hyTools/PLSR_Hyspiri_test/*.csv" % home)
-vnorm= True
-vnorm_scaler = 1
-rgbim = True
-ross = 'thick'
-li = 'dense'
-
-
-
-image_to_traits(image,observables,mask_type,mask_threshold,topo_correct,brdf_correct,vnorm,rgbim,traits):
-#
+  
+if __name__== "__main__":
     
-    
-parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description = "In memory trait mapping tool.")
+    parser.add_argument("--img", help="Input image pathname",required=True, type = str)
+    parser.add_argument("--obs", help="Input observables pathname", required=True, type = str)
+    parser.add_argument("--brdf", help="Perform BRDF correction",action='store_true')
+    parser.add_argument("--kernels", help="Li and Ross kernel types",nargs = 2, type =str)
+    parser.add_argument("--topo", help="Perform topographic correction", action='store_true')
+    parser.add_argument("--mask", help="Image mask type to use", action='store_true')
+    parser.add_argument("--mask_threshold", help="Mask threshold value", type = float)
+    parser.add_argument("--rgbim", help="Export RGBI +Mask image.", action='store_true')
+    parser.add_argument("--vnorm", help="Vector normalize image", action='store_true')
+    parser.add_argument("--vnorm_scaler", help="Scaling value for vector normalization", type = int)
+    parser.add_argument("--coeffs", help="Trait coefficients directory", required=True, type = str)
+    args = parser.parse_args()
+    image_to_traits(args)
 
-#parser.add_argument("--in", help="Input image pathname", action='store_true')
-#parser.add_argument("--obs", help="Input observables pathname", action='store_true')
-#parser.add_argument("--brdf", help="Perform BRDF correction",action='store_true')
-#parser.add_argument("--topo", help="Perform topographic correction", action='store_true')
-#parser.add_argument("--mask", help="Image mask type to use", action='store_true')
-#parser.add_argument("--mask_threshold", help="Mask threshold value", action='store_true')
-#parser.add_argument("--vnorm", help="Vector normalize image", action='store_true')
-#parser.add_argument("--vnorm_scaler", help="Scaling value for vecotr normalization", action='store_true')
-#parser.add_argument("--coeffs", help="Trait coefficients directory", action='store_true')
-#
-#
+#python image_to_traits.py --img /data/aviris/f140414t01p00r08_refl_hpc18_v1 --obs /data/aviris/f140414t01p00r08_obs_hpc18_v1 --brdf --kernels dense thick --topo --mask --mask_threshold .5 --rgbim --vnorm --vnorm_scaler 1 --coeffs /home/adam/Dropbox/projects/hyTools/PLSR_Hyspiri_test/
+
+
+
+
+
+
+
 
 
 
