@@ -30,7 +30,7 @@ IEEE Transactions on Geoscience and Remote Sensing, 53(11), 5814-5823.
 
 BRDF correction consists of the following steps:
     
-    1. Stratified random sampling of the image(s) based on predefined scattering classes
+    1. OPTIONAL: Stratified random sampling of the image(s) based on predefined scattering classes
     2. Regression modeling per scattering class, per wavelength
             reflectance = fIso + fVol*kVol +  fGeo*kGeo
             (eq 2. Weyermann et al. IEEE-TGARS 2015)
@@ -38,21 +38,49 @@ BRDF correction consists of the following steps:
             (eq 5. Weyermann et al. IEEE-TGARS 2015)
 """
 
-def generate_brdf_coeffs_img(hyObj,solar_az,solar_zn,sensor_az,sensor_zn,ross,li):
-    '''Generate BRDF coefficients for a single image.
-    
+
+
+def generate_brdf_coeff_band(band,mask,k_vol,k_geom):
+    '''Return the BRDF coefficients for the input band.
     
     Parameters
     ----------
-    hyObj:      hyTools file object
-    solar_az:   float or np.array
-                Solar zenith angle in radians
-    solar_zn:   float or np.array 
-                Solar zenith angle in radians
-    sensor_az:  np.array
-                Sensor view azimuth angle in radians
-    sensor_zn:  np.array
-                Sensor view zenith angle in radians          
+    band:       m x n np.array
+                Image band
+    mask:       m x n np.array
+                Binary image mask
+    k_vol:      m x n np.array
+                Volume scattering kernel image
+    k_geom:     m x n np.array
+                Geometric scattering kernel image
+    Returns
+    -------
+    brdf_coeff: list
+                BRDF coefficients
+    '''
+    
+    # Mask kernels
+    k_vol = k_vol[mask]
+    k_geom = k_geom[mask]
+    # Reshape for regression
+    k_vol = np.expand_dims(k_vol,axis=1)
+    k_geom = np.expand_dims(k_geom,axis=1)
+    #X = np.concatenate([k_vol,k_geom,np.ones(k_geom.shape)],axis=1)
+    X = np.concatenate([k_vol,k_geom,np.ones(k_geom.shape)],axis=1)
+    # Mask input band
+    y = band[mask]
+    # Calculate BRDF coefficients
+    brdf_coeff = np.linalg.lstsq(X, y)[0].flatten()
+    
+    return brdf_coeff
+    
+
+def generate_brdf_coeffs_img(hyObj,ross,li):
+    '''Generate BRDF coefficients for a single image.
+    
+    Parameters
+    ----------
+    hyObj:      hyTools file object   
     ross:       str 
                 Volume scattering kernel type [dense,sparse]
     li :        str 
@@ -64,44 +92,25 @@ def generate_brdf_coeffs_img(hyObj,solar_az,solar_zn,sensor_az,sensor_zn,ross,li
                 BRDF coefficients
     '''
     
-    
     # Generate scattering kernels
-    k_vol = generate_volume_kernel(solar_az,solar_zn,sensor_az,sensor_zn, ross = ross)
-    k_geom = generate_geom_kernel(solar_az,solar_zn,sensor_az,sensor_zn,li = li)
+    k_vol = generate_volume_kernel(hyObj.solar_az,hyObj.solar_zn,hyObj.sensor_az,hyObj.sensor_zn, ross = ross)
+    k_geom = generate_geom_kernel(hyObj.solar_az,hyObj.solar_zn,hyObj.sensor_az,hyObj.sensor_zn,li = li)
     
-    # Mask kernels
-    k_vol = k_vol[hyObj.mask]
-    k_geom = k_geom[hyObj.mask]
-
-    # Reshape for regression
-    k_vol = np.expand_dims(k_vol,axis=1)
-    k_geom = np.expand_dims(k_geom,axis=1)
-    X = np.concatenate([k_vol,k_geom,np.ones(k_geom.shape)],axis=1)
-
+    brdf_coeffs = [] 
     iterator = hyObj.iterate(by = 'band')
-    brdf_coeffs = []
-    
+
     while not iterator.complete:        
         band = iterator.read_next()    
-        
-        y = band[hyObj.mask]
-        brdf_coeffs.append(np.linalg.lstsq(X, y)[0].flatten())
-    
+        brdf_coeffs.append(generate_brdf_coeffs_band(band,hyObj.mask,k_vol,k_geom))
     # Store coeffs in a pandas dataframe
-    brdfDF =  pd.DataFrame.from_dict(dict(zip(hyObj.wavelengths,brdf_coeffs))).T
-    brdfDF.columns = ['k_vol','k_geom','k_iso']
+    brdf_df =  pd.DataFrame(brdf_coeffs,index = hyObj.wavelengths,columns=['k_vol','k_geom','k_iso'])
 
     del k_vol, k_geom
-
-    return brdfDF
+    return brdf_df
     
-def generate_brdf_coeffs_mosaic(pathname):
-
-    return None
-
 
     
-def apply_brdf_coeffs(hyObj,output_name,brdf_coeffs,solar_az,solar_zn,sensor_az,sensor_zn,ross,li):
+def brdf_correct_img(hyObj,output_name,ross,li):
     """Apply BRDF coeffients to an image.
 
     Parameters
@@ -111,35 +120,27 @@ def apply_brdf_coeffs(hyObj,output_name,brdf_coeffs,solar_az,solar_zn,sensor_az,
     output_name: str
                 Path name for BRDF corrected file.
     brdf_coeffs: 
-                Path name for BRDF corrected file.
-    solar_az:   float or np.array
-                Solar zenith angle in radians
-    solar_zn:   float or np.array 
-                Solar zenith angle in radians
-    sensor_az:  np.array
-                Sensor view azimuth angle in radians
-    sensor_zn:  np.array
-                Sensor view zenith angle in radians          
+                Path name for BRDF corrected file.      
     li :        str 
                 Geometric scattering kernel type [dense,sparse]
     ross:       str 
-                Volume scattering kernel type [dense,sparse]
+                Volume scattering kernel type [thick,thin]
    
     Returns
     -------
     None
         
     """
-    # Load BRDF coefficents to pandas dataframe
-    brdf_df =pd.read_csv(brdf_coeffs,index_col = 0)
+    # Calculate BRDF coefficents
+    brdf_df = generate_brdf_coeffs_img(hyObj,ross,li)
     
     # Generate scattering kernels
-    k_vol = generate_volume_kernel(solar_az,solar_zn,sensor_az,sensor_zn, ross = ross)
-    k_geom = generate_geom_kernel(solar_az,solar_zn,sensor_az,sensor_zn,li = li)
+    k_vol = generate_volume_kernel(hyObj.solar_az,hyObj.solar_zn,hyObj.sensor_az,hyObj.sensor_zn, ross = ross)
+    k_geom = generate_geom_kernel(hyObj.solar_az,hyObj.solar_zn,hyObj.sensor_az,hyObj.sensor_zn,li = li)
     
     # Generate scattering kernels at Nadir
-    k_vol_nadir = generate_volume_kernel(solar_az,solar_zn,sensor_az,0, ross = ross)
-    k_geom_nadir = generate_geom_kernel(solar_az,solar_zn,sensor_az,0,li = li)
+    k_vol_nadir = generate_volume_kernel(hyObj.solar_az,hyObj.solar_zn,hyObj.sensor_az,0, ross = ross)
+    k_geom_nadir = generate_geom_kernel(hyObj.solar_az,hyObj.solar_zn,hyObj.sensor_az,0,li = li)
     
     
     # Create writer object
@@ -149,7 +150,6 @@ def apply_brdf_coeffs(hyObj,output_name,brdf_coeffs,solar_az,solar_zn,sensor_az,
         writer = None
     else:
         print("ERROR: File format not recognized.")
-
 
     iterator = hyObj.iterate(by = 'chunk')
 

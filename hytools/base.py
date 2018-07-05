@@ -1,6 +1,6 @@
 from .file_io import *
 import numpy as np,os,h5py
-
+from collections import Counter
 # ENVI datatype conversion dictionary
 dtypeDict = {1:np.uint8,
              2:np.int16,
@@ -48,8 +48,16 @@ def openENVI(srcFile):
     hyObj.no_data = header_dict['data ignore value']
     hyObj.file_type = "ENVI"
     hyObj.file_name = srcFile
-    hyObj.bad_bands = header_dict['bbl']
     
+    if type(header_dict['bbl']) == np.ndarray:
+        hyObj.bad_bands = np.array([x==1 for x in header_dict['bbl']])
+    
+    
+    #Load image using GDAL to get projection information
+    gdalFile = gdal.Open(hyObj.file_name)
+    hyObj.projection =gdalFile.GetProjection()
+    hyObj.transform = gdalFile.GetGeoTransform()
+        
     if header_dict["interleave"] == 'bip':    
         hyObj.shape = (hyObj.lines, hyObj.columns, hyObj.bands)
     elif header_dict["interleave"] == 'bil':    
@@ -59,14 +67,25 @@ def openENVI(srcFile):
     else:
         print("ERROR: Unrecognized interleave type.")
         hyObj = None
+        
+    # If no_data value is not specified guess using image corners.   
+    if np.isnan(hyObj.no_data):  
+        print("No data value specified, guessing.")
+        hyObj.load_data()
+        ul = hyObj.data[0,0,0]
+        ur = hyObj.data[0,-1,0]
+        ll = hyObj.data[-1,0,0]
+        lr = hyObj.data[-1,-1,0]
+        counts = {v: k for k, v in Counter([ul,ur,ll,lr]).items()}
+        hyObj.no_data = counts[max(counts.keys())]
+        hyObj.close_data()
+        
     hyObj.header_dict =  header_dict 
     del header_dict
     return hyObj    
         
 
-    
-    
-def openHDF(srcFile, structure = "NEON", no_data = -9999):
+def openHDF(srcFile, structure = "NEON", no_data = -9999,load_obs = False):
     """Load and parse HDF image into a HyTools data object
         
     Parameters
@@ -92,19 +111,28 @@ def openHDF(srcFile, structure = "NEON", no_data = -9999):
     base_key = list(hdfObj.keys())[0]
     metadata = hdfObj[base_key]["Reflectance"]["Metadata"]
     data = hdfObj[base_key]["Reflectance"]["Reflectance_Data"] 
-    hyObj.crs = metadata['Coordinate_System']['Coordinate_System_String'].value 
-    hyObj.map_info = metadata['Coordinate_System']['Map_Info'].value 
+    hyObj.projection = metadata['Coordinate_System']['Coordinate_System_String'].value.decode("utf-8")
+    map_info = metadata['Coordinate_System']['Map_Info'].value.decode("utf-8").split(',')
+    hyObj.transform = (float(map_info[3]),float(map_info[1]),0,float(map_info[4]),0,-float(map_info[2]))
     hyObj.fwhm =  metadata['Spectral_Data']['FWHM'].value
     hyObj.wavelengths = metadata['Spectral_Data']['Wavelength'].value.astype(int)
-    hyObj.ulX = np.nan
-    hyObj.ulY = np.nan
+    hyObj.wavelengthUnits = metadata['Spectral_Data']['Wavelength'].attrs['Units']
     hyObj.lines = data.shape[0]
     hyObj.columns = data.shape[1]
     hyObj.bands = data.shape[2]
     hyObj.no_data = no_data
     hyObj.file_type = "HDF"
     hyObj.file_name = srcFile
-    
+ 
+    # Load observables to memory
+    if load_obs: 
+        hyObj.solar_zn = np.ones((hyObj.lines, hyObj.columns)) * np.radians(metadata['Logs']['Solar_Zenith_Angle'].value)
+        hyObj.solar_az = np.ones((hyObj.lines, hyObj.columns)) * np.radians(metadata['Logs']['Solar_Azimuth_Angle'].value)
+        hyObj.sensor_zn = np.radians(metadata['to-sensor_Zenith_Angle'][:,:])
+        hyObj.sensor_az = np.radians(metadata['to-sensor_Azimuth_Angle'][:,:])
+        hyObj.slope = np.radians(metadata['Ancillary_Imagery']['Slope'].value)
+        hyObj.azimuth =  np.radians(metadata['Ancillary_Imagery']['Aspect'].value)
+        
     hdfObj.close()
     return hyObj
 
@@ -151,10 +179,10 @@ class HyTools(object):
         bad_bands = []
         
         for wavelength in self.wavelengths:
-            bad =1
+            bad =True
             for start,end in bad_regions:
                 if (wavelength >= start) and (wavelength <=end):
-                    bad = 0
+                    bad = False
             bad_bands.append(bad)             
         self.bad_bands = np.array(bad_bands)
     
@@ -174,11 +202,8 @@ class HyTools(object):
             self.hdfObj = h5py.File(self.file_name,'r')
             base_key = list(self.hdfObj.keys())[0]
             self.data = self.hdfObj[base_key]["Reflectance"]["Reflectance_Data"] 
-        
-        self.mask = np.ones((self.lines, self.columns), dtype=bool)
-        
-        print("Data object loaded to memory.")
-        
+        self.mask = np.ones((self.lines, self.columns), dtype=bool) & (self.get_band(0) != self.no_data)
+                
     def close_data(self):
         """Close data object.
         """
@@ -187,7 +212,6 @@ class HyTools(object):
             del self.data
         elif self.file_type  == "HDF":
             self.hdfObj.close()
-        print("Closed data file.") 
          
     def iterate(self,by,chunk_size= (100,100)):    
         """Return data iterator.
@@ -231,7 +255,66 @@ class HyTools(object):
         elif self.file_type == "ENVI":
             band = envi_read_band(self.data,band,self.interleave)
         return band
-             
+    
+    
+    def get_wave(self,wave):
+        """Return the band image corresponding to the input wavelength, 
+        if not an exact match the closest wavelength will be returned.
+
+        Parameters
+        ----------
+        wave: int
+                Wavelength of band to be gotten.
+        Returns
+        -------
+        band : np.array (lines, columns)
+        """
+        
+        # Perform wavelength unit conversion if nescessary
+        if self.wavelengthUnits == "micrometers" and wave > 3:
+            wave/= 1000
+        if self.wavelengthUnits == "nanometers" and wave < 3:
+            wave*= 1000
+
+        if wave in self.wavelengths:
+            band = np.argwhere(wave == hyObj.wavelengths)[0][0]
+        elif (wave  > self.wavelengths.max()) | (wave  < self.wavelengths.min()):
+            print("Input wavelength outside image range!")
+            return
+        else: 
+            band = np.argmin(np.abs(self.wavelengths - wave))
+        
+        # Retrieve band    
+        if self.file_type == "HDF":
+            band = hdf_read_band(self.data,band)
+        elif self.file_type == "ENVI":
+            band = envi_read_band(self.data,band,self.interleave)
+        return band
+    
+            
+    def wave_to_band(self,wave):
+        """Return band number corresponding to input wavelength. Return closest band if
+           not an exact match. 
+          
+           wave : float/int
+                  Wavelength 
+
+        """
+        # Perform wavelength unit conversion if nescessary
+        if self.wavelengthUnits == "micrometers" and wave > 3:
+            wave/= 1000
+        if self.wavelengthUnits == "nanometers" and wave < 3:
+            wave*= 1000
+
+        if wave in self.wavelengths:
+            band = np.argwhere(wave == hyObj.wavelengths)[0][0]
+        elif (wave  > self.wavelengths.max()) | (wave  < self.wavelengths.min()):
+            print("Input wavelength outside image range!")
+            band = np.nan
+        else: 
+            band = np.argmin(np.abs(self.wavelengths - wave))
+        return band
+          
     def get_line(self,line):        
         """Return the i-th band of the image.
         
@@ -304,15 +387,31 @@ class HyTools(object):
             self.mask = mask
         else:
             print("Error: Shape of mask does not match shape of image.")
+
+    
+    
+    def load_obs(self,observables):
+        """
+        Load observables to memory.
         
-    
-    
-    
-    
-    
-    
-    
-    
-    
+        """
+        if self.file_type == "ENVI":
+            observables = openENVI(observables)
+            observables.load_data()
+            self.sensor_az = np.radians(observables.get_band(1))
+            self.sensor_zn = np.radians(observables.get_band(2))
+            self.solar_az = np.radians(observables.get_band(3))
+            self.solar_zn = np.radians(observables.get_band(4))
+            self.slope = np.radians(observables.get_band(6))
+            self.azimuth = np.radians(observables.get_band(7))
+            observables.close_data()
+                
+                
+                
+                
+                
+                
+            
+
     
     
