@@ -116,7 +116,7 @@ def openHDF(srcFile, structure = "NEON", no_data = -9999,load_obs = False):
     hyObj.transform = (float(map_info[3]),float(map_info[1]),0,float(map_info[4]),0,-float(map_info[2]))
     hyObj.fwhm =  metadata['Spectral_Data']['FWHM'].value
     hyObj.wavelengths = metadata['Spectral_Data']['Wavelength'].value.astype(int)
-    hyObj.wavelengthUnits = metadata['Spectral_Data']['Wavelength'].attrs['Units']
+    hyObj.wavelengthUnits = metadata['Spectral_Data']['Wavelength'].attrs['Units'].decode("utf-8")
     hyObj.lines = data.shape[0]
     hyObj.columns = data.shape[1]
     hyObj.bands = data.shape[2]
