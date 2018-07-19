@@ -48,6 +48,7 @@ def openENVI(srcFile):
     hyObj.no_data = header_dict['data ignore value']
     hyObj.file_type = "ENVI"
     hyObj.file_name = srcFile
+    hyObj.map_info = header_dict["map info"]
     
     if type(header_dict['bbl']) == np.ndarray:
         hyObj.bad_bands = np.array([x==1 for x in header_dict['bbl']])
@@ -113,7 +114,31 @@ def openHDF(srcFile, structure = "NEON", no_data = -9999,load_obs = False):
     data = hdfObj[base_key]["Reflectance"]["Reflectance_Data"] 
     hyObj.projection = metadata['Coordinate_System']['Coordinate_System_String'].value.decode("utf-8")
     map_info = metadata['Coordinate_System']['Map_Info'].value.decode("utf-8").split(',')
-    hyObj.transform = (float(map_info[3]),float(map_info[1]),0,float(map_info[4]),0,-float(map_info[2]))
+    hyObj.map_info = map_info
+    
+    hyObj.transform = (float(map_info[3]),float(map_info[5]),0,float(map_info[4]),0,-float(map_info[6]))
+
+    #update transform based on rotation angle, if no rotation, nothing is done 
+    rot_angle = map_info[-1].split('rotation=')
+    
+    # no rotation term in map_info if length is 1; if rotation exists, length is 2 
+    if len(rot_angle)==2:
+      rot_angle = float(rot_angle[-1].strip())
+
+      # add minus sign and covert to radians
+      rot_angle = - np.radians( rot_angle)
+
+      if not rot_angle ==0:
+        (ul_x, x_resolution, x_rot, ul_y, y_rot, y_resolution ) = hyObj.transform
+    
+        new_x_resolution =      x_resolution * np.cos(rot_angle)
+        new_x_rot =       (-1)* x_resolution * np.sin(rot_angle)
+        new_y_rot =             y_resolution * np.sin(rot_angle)
+        new_y_resolution =      y_resolution * np.cos(rot_angle)
+
+        # update to new transform
+        hyObj.transform = (ul_x, new_x_resolution, new_x_rot, ul_y, new_y_rot, new_y_resolution)
+
     hyObj.fwhm =  metadata['Spectral_Data']['FWHM'].value
     hyObj.wavelengths = metadata['Spectral_Data']['Wavelength'].value.astype(int)
     hyObj.wavelengthUnits = metadata['Spectral_Data']['Wavelength'].attrs['Units'].decode("utf-8")
