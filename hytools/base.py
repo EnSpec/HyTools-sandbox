@@ -43,7 +43,7 @@ def openENVI(srcFile):
     hyObj.interleave =  header_dict["interleave"]
     hyObj.fwhm =  header_dict["fwhm"]
     hyObj.wavelengths = header_dict["wavelength"]
-    hyObj.wavelengthUnits = header_dict["wavelength units"]
+    hyObj.wavelength_units = header_dict["wavelength units"]
     hyObj.dtype = dtypeDict[header_dict["data type"]]
     hyObj.no_data = header_dict['data ignore value']
     hyObj.file_type = "ENVI"
@@ -68,6 +68,20 @@ def openENVI(srcFile):
         print("ERROR: Unrecognized interleave type.")
         hyObj = None
         
+    #Convert all units to nanometers
+    if hyObj.wavelength_units == "micrometers":
+       hyObj.wavelength_units ="nanometers" 
+       hyObj.wavelengths*=10*3
+       hyObj.fwhm*= 10*3
+       
+    if hyObj.wavelength_units not in ["nanometers","micrometers"]:
+        try:
+            if hyObj.wavelengths.min() <100:
+                hyObj.wavelengths*=10**3
+                hyObj.fwhm*= 10**3        
+            hyObj.wavelength_units = "nanometers"
+        except:
+            hyObj.wavelength_units = "unknown"
     # If no_data value is not specified guess using image corners.   
     if np.isnan(hyObj.no_data):  
         print("No data value specified, guessing.")
@@ -81,6 +95,10 @@ def openENVI(srcFile):
         hyObj.close_data()
         
     hyObj.header_dict =  header_dict 
+    
+    
+    
+    
     del header_dict
     return hyObj    
         
@@ -116,7 +134,17 @@ def openHDF(srcFile, structure = "NEON", no_data = -9999,load_obs = False):
     hyObj.transform = (float(map_info[3]),float(map_info[1]),0,float(map_info[4]),0,-float(map_info[2]))
     hyObj.fwhm =  metadata['Spectral_Data']['FWHM'].value
     hyObj.wavelengths = metadata['Spectral_Data']['Wavelength'].value.astype(int)
-    hyObj.wavelengthUnits = metadata['Spectral_Data']['Wavelength'].attrs['Units']
+    
+    #If wavelengths units are not specified guess
+    try:
+        hyObj.wavelength_units = metadata['Spectral_Data']['Wavelength'].attrs['Units']
+    except:
+        if hyObj.wavelengths.min() >100:
+            hyObj.wavelength_units = "nanometers"
+        else:
+            hyObj.wavelength_units = "micrometers"
+            
+            
     hyObj.lines = data.shape[0]
     hyObj.columns = data.shape[1]
     hyObj.bands = data.shape[2]
@@ -150,8 +178,8 @@ class HyTools(object):
         self.columns = np.nan
         self.bands = np.nan
         self.wavelengths = np.nan
-        self.fwhm = np.nan
-        self.bad_bands = np.nan
+        self.fwhm = []
+        self.bad_bands = []
         self.no_data = np.nan
         self.map_info = np.nan
         self.crs = np.nan
@@ -271,13 +299,13 @@ class HyTools(object):
         """
         
         # Perform wavelength unit conversion if nescessary
-        if self.wavelengthUnits == "micrometers" and wave > 3:
+        if self.wavelength_units == "micrometers" and wave > 3:
             wave/= 1000
-        if self.wavelengthUnits == "nanometers" and wave < 3:
+        if self.wavelength_units == "nanometers" and wave < 3:
             wave*= 1000
 
         if wave in self.wavelengths:
-            band = np.argwhere(wave == hyObj.wavelengths)[0][0]
+            band = np.argwhere(wave == self.wavelengths)[0][0]
         elif (wave  > self.wavelengths.max()) | (wave  < self.wavelengths.min()):
             print("Input wavelength outside image range!")
             return
@@ -301,9 +329,9 @@ class HyTools(object):
 
         """
         # Perform wavelength unit conversion if nescessary
-        if self.wavelengthUnits == "micrometers" and wave > 3:
+        if self.wavelength_units == "micrometers" and wave > 3:
             wave/= 1000
-        if self.wavelengthUnits == "nanometers" and wave < 3:
+        if self.wavelength_units == "nanometers" and wave < 3:
             wave*= 1000
 
         if wave in self.wavelengths:

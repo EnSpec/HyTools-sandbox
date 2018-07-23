@@ -49,7 +49,7 @@ class writeENVI(object):
             self.data = np.memmap(output_name,dtype = dtype, mode='w+', shape =(lines,bands,columns))
         elif self.interleave == "bsq":
             self.data = np.memmap(output_name,dtype = dtype, mode='w+',shape =(bands,lines,columns))    
-            
+        write_ENVI_header(self.output_name,self.headerDict)    
             
     def write_line(self,dataArray,line):
         """ Write line to ENVI file.
@@ -108,7 +108,6 @@ class writeENVI(object):
             self.data[:,y_start:y_end,x_start:x_end] = np.moveaxis(dataArray,-1,0)
         
     def close(self):
-        write_ENVI_header(self.output_name,self.headerDict)
         del self.data
                         
         

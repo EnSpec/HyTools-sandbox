@@ -2,7 +2,7 @@ import numpy as np
 from ..file_io import *
 
 
-def vector_normalize_chunk(chunk,band_mask,scaler):
+def vector_normalize_chunk(chunk,scaler):
     """Compute the pixel-wise vector norm of an image chunk.
     
     
@@ -10,8 +10,6 @@ def vector_normalize_chunk(chunk,band_mask,scaler):
     ----------
     chunk : m x n x b np.array
              Image chunck
-    band_mask: list
-            Boolean list of bands to be used for calculating vector norm
     scaler: int
             Vector normalization scaling value
 
@@ -22,7 +20,7 @@ def vector_normalize_chunk(chunk,band_mask,scaler):
     
     """
     
-    norm = np.expand_dims(np.linalg.norm(chunk[:,:,band_mask],axis=2),axis=2)            
+    norm = np.expand_dims(np.linalg.norm(chunk,axis=2),axis=2)            
     vnorm = scaler*chunk/norm
     
     return vnorm
@@ -56,7 +54,7 @@ def vector_normalize_img(hyObj,output_name,scaler = 100000):
 
     while not iterator.complete:
         chunk = iterator.read_next()            
-        vnorm = vector_normalize_chunk(chunk,band_mask,scaler)
+        vnorm = vector_normalize_chunk(chunk[:,:,band_mask],scaler)
         
         # Reassign no_data values            
         vnorm[chunk == hyObj.no_data] = hyObj.no_data 

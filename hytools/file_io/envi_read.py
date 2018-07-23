@@ -194,7 +194,7 @@ def parse_ENVI_header(hdrFile):
                  "interleave": "str",
                  "lines": "int",
                  "map info": "list_str",
-                 "pixel size": "list_float",
+                 "pixel size": "list_str",
                  "projection info": "str",
                  "read procedures": "str",
                  "reflectance scale factor": "float",
