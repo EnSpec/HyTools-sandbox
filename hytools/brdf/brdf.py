@@ -35,7 +35,7 @@ BRDF correction consists of the following steps:
             reflectance = fIso + fVol*kVol +  fGeo*kGeo
             (eq 2. Weyermann et al. IEEE-TGARS 2015)
     3. Adjust reflectance using a multiplicative correction per class, per wavelength. 
-            (eq 5. Weyermann et al. IEEE-TGARS 2015)
+            (eq 4. Weyermann et al. IEEE-TGARS 2015)
 """
 
 
