@@ -27,14 +27,14 @@ def openENVI(srcFile):
 
     """
     
-    if not os.path.isfile(srcFile + ".hdr"):
+    if not os.path.isfile(os.path.splitext(srcFile)[0] + ".hdr"):
         print("ERROR: Header file not found.")
         return None
 
     hyObj = HyTools()
 
     # Load header into dictionary
-    header_dict = parse_ENVI_header(srcFile + ".hdr")
+    header_dict = parse_ENVI_header(os.path.splitext(srcFile)[0] + ".hdr")
 
     # Assign HyTools object attributes
     hyObj.lines =  header_dict["lines"]
@@ -130,8 +130,8 @@ def openHDF(srcFile, structure = "NEON", no_data = -9999,load_obs = False):
     metadata = hdfObj[base_key]["Reflectance"]["Metadata"]
     data = hdfObj[base_key]["Reflectance"]["Reflectance_Data"] 
     hyObj.projection = metadata['Coordinate_System']['Coordinate_System_String'].value.decode("utf-8")
-    map_info = metadata['Coordinate_System']['Map_Info'].value.decode("utf-8").split(',')
-    hyObj.transform = (float(map_info[3]),float(map_info[1]),0,float(map_info[4]),0,-float(map_info[2]))
+    hyObj.map_info = metadata['Coordinate_System']['Map_Info'].value.decode("utf-8").split(',')
+    hyObj.transform = (float(hyObj.map_info [3]),float(hyObj.map_info [1]),0,float(hyObj.map_info [4]),0,-float(hyObj.map_info [2]))
     hyObj.fwhm =  metadata['Spectral_Data']['FWHM'].value
     hyObj.wavelengths = metadata['Spectral_Data']['Wavelength'].value.astype(int)
     
@@ -214,7 +214,7 @@ class HyTools(object):
             bad_bands.append(bad)             
         self.bad_bands = np.array(bad_bands)
     
-    def load_data(self, mode = 'r'):
+    def load_data(self, mode = 'r', offset = 0):
         """Load data object to memory.
         
         Parameters
@@ -225,7 +225,7 @@ class HyTools(object):
         """
         
         if self.file_type  == "ENVI":
-            self.data = np.memmap(self.file_name,dtype = self.dtype, mode=mode, shape = self.shape)
+            self.data = np.memmap(self.file_name,dtype = self.dtype, mode=mode, shape = self.shape,offset=offset)
         elif self.file_type  == "HDF":
             self.hdfObj = h5py.File(self.file_name,'r')
             base_key = list(self.hdfObj.keys())[0]
