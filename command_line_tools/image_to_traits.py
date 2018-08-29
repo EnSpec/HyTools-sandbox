@@ -49,8 +49,7 @@ def main():
         hyObj.load_obs(args.obs)
     if not args.od.endswith("/"):
         args.od+="/"
-    if len(hyObj.bad_bands) == 0:   
-        hyObj.create_bad_bands([[300,400],[1330,1430],[1800,1960],[2450,2600]])
+    hyObj.create_bad_bands([[300,400],[1330,1430],[1800,1960],[2450,2600]])
     hyObj.load_data()
     
     # Generate mask
@@ -82,38 +81,69 @@ def main():
     # Cycle through the bands and calculate the topographic and BRDF correction coefficients
     print("Calculating image correction coefficients.....")
     iterator = hyObj.iterate(by = 'band')
-    while not iterator.complete:   
-        band = iterator.read_next() 
-        progbar(iterator.current_band+1, len(hyObj.wavelengths), 100)
-        #Skip bad bands
-        if hyObj.bad_bands[iterator.current_band]:
-            # Generate topo correction coefficients
-            if args.topo:
-                topo_coeff= generate_topo_coeff_band(band,hyObj.mask,cos_i)
-                topo_coeffs.append(topo_coeff)
-                # Apply topo correction to current band
-                correctionFactor = (c1 * topo_coeff)/(cos_i * topo_coeff)
-                band = band* correctionFactor
-            # Gernerate BRDF correction coefficients
-            if args.brdf:
-                brdf_coeffs.append(generate_brdf_coeff_band(band,hyObj.mask,k_vol,k_geom))
-
-        if args.topo and iterator.complete:
-            topo_df =  pd.DataFrame(topo_coeffs, index=  hyObj.wavelengths[hyObj.bad_bands], columns = ['c'])
-            topo_df.to_csv(args.od + os.path.splitext(os.path.basename(args.img))[0]+ "_topo_coefficients.csv")    
+    
+    if args.topo or args.brdf:
+        while not iterator.complete:   
+            band = iterator.read_next() 
+            progbar(iterator.current_band+1, len(hyObj.wavelengths), 100)
+            #Skip bad bands
+            if hyObj.bad_bands[iterator.current_band]:
+                # Generate topo correction coefficients
+                if args.topo:
+                    topo_coeff= generate_topo_coeff_band(band,hyObj.mask,cos_i)
+                    topo_coeffs.append(topo_coeff)
+                    # Apply topo correction to current band
+                    correctionFactor = (c1 * topo_coeff)/(cos_i * topo_coeff)
+                    band = band* correctionFactor
+                # Gernerate BRDF correction coefficients
+                if args.brdf:
+                    brdf_coeffs.append(generate_brdf_coeff_band(band,hyObj.mask,k_vol,k_geom))
+    
+            if args.topo and iterator.complete:
+                topo_df =  pd.DataFrame(topo_coeffs, index=  hyObj.wavelengths[hyObj.bad_bands], columns = ['c'])
+                topo_df.to_csv(args.od + os.path.splitext(os.path.basename(args.img))[0]+ "_topo_coefficients.csv")    
+                
+                
+            if args.brdf and iterator.complete:
+                brdf_df =  pd.DataFrame(brdf_coeffs,index = hyObj.wavelengths[hyObj.bad_bands],columns=['k_vol','k_geom','k_iso'])
+                brdf_df.to_csv(args.od + os.path.splitext(os.path.basename(args.img))[0]+ "_brdf_coefficients.csv")  
             
-            
-        if args.brdf and iterator.complete:
-            brdf_df =  pd.DataFrame(brdf_coeffs,index = hyObj.wavelengths[hyObj.bad_bands],columns=['k_vol','k_geom','k_iso'])
-            brdf_df.to_csv(args.od + os.path.splitext(os.path.basename(args.img))[0]+ "_brdf_coefficients.csv")  
-        
-    print()
+        print()
         
     #Cycle through the chunks and apply topo, brdf, vnorm,resampling and trait estimation steps
     print("Calculating values for %s traits....." % len(traits))
+
+    # Cycle through trait models and gernerate resampler
+    trait_waves_all = []
+    trait_fwhm_all = []
+    
+    for i,trait in enumerate(traits):
+        with open(trait) as json_file:  
+            trait_model = json.load(json_file)
+         
+        # Check if wavelength units match
+        if trait_model['wavelength_units'] == 'micrometers':
+            trait_wave_scaler = 10**3
+        else:
+            trait_wave_scaler = 1    
+        
+        # Get list of wavelengths to compare against image wavelengths
+        if len(trait_model['vector_norm_wavelengths']) == 0:
+            trait_waves_all += list(np.array(trait_model['model_wavelengths'])*trait_wave_scaler)
+        else:
+            trait_waves_all += list(np.array(trait_model['vector_norm_wavelengths'])*trait_wave_scaler)
+        
+        trait_fwhm_all += list(np.array(trait_model['fwhm'])* trait_wave_scaler)        
+             
+    # List of all unique pairs of wavelengths and fwhm    
+    trait_waves_fwhm = list(set([x for x in zip(trait_waves_all,trait_fwhm_all)]))
+    trait_waves_fwhm.sort(key = lambda x: x[0])
+    # Create a single set of resampling coefficients for all wavelength and fwhm combos
+    resampling_coeffs = est_transform_matrix(hyObj.wavelengths[hyObj.bad_bands],[x for (x,y) in trait_waves_fwhm] ,hyObj.fwhm[hyObj.bad_bands],[y for (x,y) in trait_waves_fwhm],1)
+
     pixels_processed = 0
     iterator = hyObj.iterate(by = 'chunk',chunk_size = (100,100))
-    
+
     while not iterator.complete:  
         chunk = iterator.read_next()  
         chunk_nodata_mask = chunk[:,:,1] == hyObj.no_data
@@ -153,6 +183,9 @@ def main():
         #Reassign no data values
         chunk[chunk_nodata_mask,:] = 0
         
+        # Resample chunk 
+        chunk_r = np.dot(chunk, resampling_coeffs) 
+        
         # Export RGBIM image
         if args.rgbim:
             dstFile = args.od + os.path.splitext(os.path.basename(args.img))[0] + '_rgbim.tif'
@@ -187,8 +220,7 @@ def main():
             writer.write_chunk(chunk,iterator.current_line,iterator.current_column)
             if iterator.complete:
                 writer.close()
-
-        # Cycle through trait models 
+                
         for i,trait in enumerate(traits):
             dstFile = args.od + os.path.splitext(os.path.basename(args.img))[0] +"_" +os.path.splitext(os.path.basename(trait))[0] +".tif"
             
@@ -197,15 +229,10 @@ def main():
                 
                 with open(trait) as json_file:  
                     trait_model = json.load(json_file)
-                    
-                # Check if wavelength units match
-                if trait_model['wavelength_units'] == 'micrometers':
-                    trait_wave_scaler = 10**3
-                else:
-                    trait_wave_scaler = 1
-                    
+       
                 intercept = np.array(trait_model['intercept'])
                 coefficients = np.array(trait_model['coefficients'])
+                transform = trait_model['transform']
                 
                 # Get list of wavelengths to compare against image wavelengths
                 if len(trait_model['vector_norm_wavelengths']) == 0:
@@ -213,28 +240,22 @@ def main():
                 else:
                     dst_waves = np.array(trait_model['vector_norm_wavelengths'])*trait_wave_scaler
                 
-                trait_fwhm = np.array(trait_model['fwhm'])* trait_wave_scaler
+                dst_fwhm = np.array(trait_model['fwhm'])* trait_wave_scaler
                 model_waves = np.array(trait_model['model_wavelengths'])* trait_wave_scaler
-                trait_band_mask = [x in dst_waves for x in model_waves]
+                model_fwhm = [dict(zip(dst_waves, dst_fwhm))[x] for x in model_waves]
+                
+                vnorm_band_mask = [x in zip(dst_waves,dst_fwhm) for x in trait_waves_fwhm]
+                model_band_mask = [x in zip(model_waves,model_fwhm) for x in trait_waves_fwhm]
                 
                 if trait_model['vector_norm']:
                     vnorm_scaler = trait_model["vector_scaler"]
                 else:
                     vnorm_scaler = None
 
-                # Check if all bands match in image and coeffs
-                if np.sum([x in dst_waves for x in hyObj.wavelengths]) != len(dst_waves):
-                    resample = True
-                    if type(hyObj.fwhm) == np.ndarray:
-                        resampling_coeffs = est_transform_matrix(hyObj.wavelengths[hyObj.bad_bands],dst_waves ,hyObj.fwhm[hyObj.bad_bands],trait_fwhm,1)
-                else:
-                    resample = False
-                    resampling_coeffs = None
-        
                 # Initialize trait dictionary
                 if i == 0:
                     trait_dict = {}
-                trait_dict[i] = [coefficients,intercept,trait_model['vector_norm'],vnorm_scaler,trait_band_mask,resample,resampling_coeffs]
+                trait_dict[i] = [coefficients,intercept,trait_model['vector_norm'],vnorm_scaler,vnorm_band_mask,model_band_mask,transform]
         
                 # Create geotiff driver
                 driver = gdal.GetDriverByName("GTIFF")
@@ -245,14 +266,17 @@ def main():
                 tiff.GetRasterBand(2).SetNoDataValue(0)
                 del tiff,driver
             
-            coefficients,intercept,vnorm,vnorm_scaler,trait_band_mask,resample,resampling_coeffs = trait_dict[i]
+            coefficients,intercept,vnorm,vnorm_scaler,vnorm_band_mask,model_band_mask,transform = trait_dict[i]
 
-            if resample:            
-                chunk_r = np.dot(chunk, resampling_coeffs) 
+            chunk_t =np.copy(chunk_r)
+
             if vnorm:            
-                chunk_v = vector_normalize_chunk(chunk_r,vnorm_scaler)
+                chunk_t[:,:,vnorm_band_mask] = vector_normalize_chunk(chunk_t[:,:,vnorm_band_mask],vnorm_scaler)
             
-            trait_mean,trait_std = apply_plsr_chunk(chunk_v[:,:,trait_band_mask],coefficients,intercept)
+            if transform == "log(1/R)":
+                chunk_t[:,:,model_band_mask] = np.log(1/chunk_t[:,:,model_band_mask] )
+
+            trait_mean,trait_std = apply_plsr_chunk(chunk_t[:,:,model_band_mask],coefficients,intercept)
             
             # Change no data pixel values
             trait_mean[chunk_nodata_mask] = 0
