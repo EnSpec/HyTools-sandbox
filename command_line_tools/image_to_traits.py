@@ -22,21 +22,18 @@ def main():
     '''
     
     parser = argparse.ArgumentParser(description = "In memory trait mapping tool.")
-    parser.add_argument("--img", help="Input image pathname",required=True, type = str)
+    parser.add_argument("-img", help="Input image pathname",required=True, type = str)
     parser.add_argument("--obs", help="Input observables pathname", required=False, type = str)
     parser.add_argument("--out", help="Output full corrected image", required=False, type = str)
-    parser.add_argument("--od", help="Output directory for all resulting products", required=True, type = str)
-    parser.add_argument("--brdf", help="Perform BRDF correction",action='store_true')
-    parser.add_argument("--kernels", help="Li and Ross kernel types",nargs = 2, type =str)
-    parser.add_argument("--topo", help="Perform topographic correction", action='store_true')
+    parser.add_argument("-od", help="Output directory for all resulting products", required=True, type = str)
+    parser.add_argument("--brdf", help="Perform BRDF correction",type = str, default = '')
+    parser.add_argument("--topo", help="Perform topographic correction", type = str, default = '')
     parser.add_argument("--mask", help="Image mask type to use", action='store_true')
     parser.add_argument("--mask_threshold", help="Mask threshold value", type = float)
     parser.add_argument("--rgbim", help="Export RGBI +Mask image.", action='store_true')
-    parser.add_argument("--coeffs", help="Trait coefficients directory", required=True, type = str)
+    parser.add_argument("-coeffs", help="Trait coefficients directory", required=True, type = str)
     args = parser.parse_args()
 
-    if args.brdf:
-       li,ross =  args.kernels
     
     traits = glob.glob("%s/*.json" % args.coeffs)
     
@@ -45,7 +42,7 @@ def main():
         hyObj = ht.openHDF(args.img,load_obs = True)
     else:
         hyObj = ht.openENVI(args.img)
-    if args.topo | args.brdf:
+    if (len(args.topo) != 0) | (len(args.brdf) != 0):
         hyObj.load_obs(args.obs)
     if not args.od.endswith("/"):
         args.od+="/"
@@ -65,50 +62,28 @@ def main():
         print("Warning no mask specified, results may be unreliable!")
 
     # Generate cosine i and c1 image for topographic correction
-    if args.topo:
+    if len(args.topo) != 0:
+        with open( args.topo) as json_file:  
+            topo_coeffs = json.load(json_file)
+            
+        topo_coeffs['c'] = np.array(topo_coeffs['c'])   
         cos_i =  calc_cosine_i(hyObj.solar_zn, hyObj.solar_az, hyObj.azimuth , hyObj.slope)
         c1 = np.cos(hyObj.solar_zn) * np.cos( hyObj.slope)
-        topo_coeffs= []
            
     # Gernerate scattering kernel images for brdf correction
-    if args.brdf:
-        k_vol = generate_volume_kernel(hyObj.solar_az,hyObj.solar_zn,hyObj.sensor_az,hyObj.sensor_zn, ross = ross)
-        k_geom = generate_geom_kernel(hyObj.solar_az,hyObj.solar_zn,hyObj.sensor_az,hyObj.sensor_zn,li = li)
-        k_vol_nadir = generate_volume_kernel(hyObj.solar_az,hyObj.solar_zn,hyObj.sensor_az,0, ross = ross)
-        k_geom_nadir = generate_geom_kernel(hyObj.solar_az,hyObj.solar_zn,hyObj.sensor_az,0,li = li)
-        brdf_coeffs= []
-
-    # Cycle through the bands and calculate the topographic and BRDF correction coefficients
-    print("Calculating image correction coefficients.....")
-    iterator = hyObj.iterate(by = 'band')
-    
-    if args.topo or args.brdf:
-        while not iterator.complete:   
-            band = iterator.read_next() 
-            progbar(iterator.current_band+1, len(hyObj.wavelengths), 100)
-            #Skip bad bands
-            if hyObj.bad_bands[iterator.current_band]:
-                # Generate topo correction coefficients
-                if args.topo:
-                    topo_coeff= generate_topo_coeff_band(band,hyObj.mask,cos_i)
-                    topo_coeffs.append(topo_coeff)
-                    # Apply topo correction to current band
-                    correctionFactor = (c1 * topo_coeff)/(cos_i * topo_coeff)
-                    band = band* correctionFactor
-                # Gernerate BRDF correction coefficients
-                if args.brdf:
-                    brdf_coeffs.append(generate_brdf_coeff_band(band,hyObj.mask,k_vol,k_geom))
-    
-            if args.topo and iterator.complete:
-                topo_df =  pd.DataFrame(topo_coeffs, index=  hyObj.wavelengths[hyObj.bad_bands], columns = ['c'])
-                topo_df.to_csv(args.od + os.path.splitext(os.path.basename(args.img))[0]+ "_topo_coefficients.csv")    
-                
-                
-            if args.brdf and iterator.complete:
-                brdf_df =  pd.DataFrame(brdf_coeffs,index = hyObj.wavelengths[hyObj.bad_bands],columns=['k_vol','k_geom','k_iso'])
-                brdf_df.to_csv(args.od + os.path.splitext(os.path.basename(args.img))[0]+ "_brdf_coefficients.csv")  
+    if len(args.brdf) != 0:
+        with open(args.brdf) as json_file:  
+            brdf_coeffs = json.load(json_file)
             
-        print()
+        brdf_coeffs['fVol'] = np.array(brdf_coeffs['fVol'])
+        brdf_coeffs['fGeo'] = np.array(brdf_coeffs['fGeo'])
+        brdf_coeffs['fIso'] = np.array(brdf_coeffs['fIso'])
+        
+        k_vol = generate_volume_kernel(hyObj.solar_az,hyObj.solar_zn,hyObj.sensor_az,hyObj.sensor_zn, ross = brdf_coeffs['ross'])
+        k_geom = generate_geom_kernel(hyObj.solar_az,hyObj.solar_zn,hyObj.sensor_az,hyObj.sensor_zn,li = brdf_coeffs['li'])
+        k_vol_nadir = generate_volume_kernel(hyObj.solar_az,hyObj.solar_zn,hyObj.sensor_az,0, ross = brdf_coeffs['ross'])
+        k_geom_nadir = generate_geom_kernel(hyObj.solar_az,hyObj.solar_zn,hyObj.sensor_az,0,li = brdf_coeffs['li'])
+
         
     #Cycle through the chunks and apply topo, brdf, vnorm,resampling and trait estimation steps
     print("Calculating values for %s traits....." % len(traits))
@@ -157,16 +132,16 @@ def main():
         col_end = iterator.current_column + chunk.shape[1]
         
         # Apply TOPO correction 
-        if args.topo:
+        if len(args.topo) != 0:
             cos_i_chunk = cos_i[line_start:line_end,col_start:col_end]
             c1_chunk = c1[line_start:line_end,col_start:col_end]
-            correctionFactor = (c1_chunk[:,:,np.newaxis]+topo_df.c.values)/(cos_i_chunk[:,:,np.newaxis] + topo_df.c.values)
+            correctionFactor = (c1_chunk[:,:,np.newaxis]+topo_coeffs['c'])/(cos_i_chunk[:,:,np.newaxis] + topo_coeffs['c'])
             chunk = chunk[:,:,hyObj.bad_bands]* correctionFactor
         else:
             chunk = chunk[:,:,hyObj.bad_bands] *1
         
         # Apply BRDF correction 
-        if args.brdf:
+        if len(args.brdf) != 0:
             # Get scattering kernel for chunks
             k_vol_nadir_chunk = k_vol_nadir[line_start:line_end,col_start:col_end]
             k_geom_nadir_chunk = k_geom_nadir[line_start:line_end,col_start:col_end]
@@ -175,8 +150,8 @@ def main():
     
             # Apply brdf correction 
             # eq 5. Weyermann et al. IEEE-TGARS 2015)
-            brdf = np.einsum('i,jk-> jki', brdf_df.k_vol,k_vol_chunk) + np.einsum('i,jk-> jki', brdf_df.k_geom,k_geom_chunk)  + brdf_df.k_iso.values
-            brdf_nadir = np.einsum('i,jk-> jki', brdf_df.k_vol,k_vol_nadir_chunk) + np.einsum('i,jk-> jki', brdf_df.k_geom,k_geom_nadir_chunk)  + brdf_df.k_iso.values
+            brdf = np.einsum('i,jk-> jki', brdf_coeffs['fVol'],k_vol_chunk) + np.einsum('i,jk-> jki', brdf_coeffs['fGeo'],k_geom_chunk)  + brdf_coeffs['fIso']
+            brdf_nadir = np.einsum('i,jk-> jki', brdf_coeffs['fVol'],k_vol_nadir_chunk) + np.einsum('i,jk-> jki', brdf_coeffs['fGeo'],k_geom_nadir_chunk)  +brdf_coeffs['fIso']
             correctionFactor = brdf_nadir/brdf
             chunk= chunk* correctionFactor
         
@@ -292,6 +267,5 @@ if __name__== "__main__":
     main()
 
 
-#python image_to_traits.py --img /Volumes/ssd/aviris/cloquet_subset --obs /Volumes/ssd/aviris/cloquet_subset_obs --od /Volumes/ssd/hyspex/ --brdf --kernels dense thick --topo --mask --mask_threshold .7 --rgbim --coeffs /Users/adam/Dropbox/projects/hyTools/PLSR_Hyspiri_test
 
-
+#python image_to_traits.py -img image.h5 -od /data/tmp --brdf /data/tmp/test_brdf_coeffs.json --topo /data/tmp/test_topo_coeffs.json --mask --mask_threshold .7 --rgbim -coeffs /data/tmp/test
