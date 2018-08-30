@@ -15,7 +15,8 @@ def progbar(curr, total, full_progbar):
 
 def main():
     '''
-    Perform in-memory trait estimation.
+    Generate topographic and BRDF correction coefficients. Corrections can be calculated on individual images
+    or groups of images.
     '''
     parser = argparse.ArgumentParser(description = "In memory trait mapping tool.")
     parser.add_argument("--img", help="Input image/directory pathname",required=True,nargs = '*', type = str)
