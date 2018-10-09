@@ -71,8 +71,8 @@ def openENVI(srcFile):
     #Convert all units to nanometers
     if hyObj.wavelength_units == "micrometers":
        hyObj.wavelength_units ="nanometers" 
-       hyObj.wavelengths*=10*3
-       hyObj.fwhm*= 10*3
+       hyObj.wavelengths*=10**3
+       hyObj.fwhm*= 10**3
        
     if hyObj.wavelength_units not in ["nanometers","micrometers"]:
         try:
