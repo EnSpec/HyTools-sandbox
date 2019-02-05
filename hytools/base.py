@@ -46,6 +46,8 @@ def openENVI(srcFile):
     hyObj.wavelength_units = header_dict["wavelength units"]
     hyObj.dtype = dtypeDict[header_dict["data type"]]
     hyObj.no_data = header_dict['data ignore value']
+    hyObj.map_info = header_dict['map info']
+
     hyObj.file_type = "ENVI"
     hyObj.file_name = srcFile
     
@@ -335,7 +337,7 @@ class HyTools(object):
             wave*= 1000
 
         if wave in self.wavelengths:
-            band = np.argwhere(wave == hyObj.wavelengths)[0][0]
+            band = np.argwhere(wave == self.wavelengths)[0][0]
         elif (wave  > self.wavelengths.max()) | (wave  < self.wavelengths.min()):
             print("Input wavelength outside image range!")
             band = np.nan
