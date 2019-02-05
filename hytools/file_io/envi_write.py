@@ -112,6 +112,31 @@ class writeENVI(object):
                         
         
 
+def ENVI_header_from_hdf(hyObj, interleave = 'bil'):
+    """Create an ENVI header dictionary from HDF metadata
+    """
+
+    headerDict = {}
+
+    headerDict["ENVI description"] = "{}"
+    headerDict["samples"] = hyObj.columns
+    headerDict["lines"]   = hyObj.lines
+    headerDict["bands"]   = hyObj.bands
+    headerDict["header offset"] = 0
+    headerDict["file type"] = "ENVI Standard"
+    headerDict["data type"] = 2
+    headerDict["interleave"] = interleave
+    headerDict["sensor type"] = ""
+    headerDict["byte order"] = 0
+    headerDict["map info"] = hyObj.map_info
+    headerDict["coordinate system string"] = hyObj.projection
+    headerDict["wavelength units"] = hyObj.wavelength_units
+    headerDict["data ignore value"] =hyObj.no_data
+    headerDict["wavelength"] =hyObj.wavelengths
+
+    return headerDict
+    
+
 def write_ENVI_header(output_name,headerDict):
     """Parse ENVI header into dictionary
     """
