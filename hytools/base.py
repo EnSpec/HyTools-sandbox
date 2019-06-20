@@ -12,6 +12,37 @@ dtypeDict = {1:np.uint8,
              14:np.int64,
              15:np.uint64}
 
+             
+def update_geotransform(hyObj):
+
+    map_info = hyObj.map_info
+
+    #update transform based on rotation angle, if no rotation, nothing is done 
+    rot_angle = map_info[-1].split('rotation=')
+    
+    # no rotation term in map_info if length is 1; if rotation exists, length is 2 
+    if len(rot_angle)==2:
+      rot_angle = float(rot_angle[-1].strip())
+
+      # add minus sign and covert to radians
+      rot_angle = - np.radians( rot_angle)
+
+      if not rot_angle ==0:
+        (ul_x, x_resolution, x_rot, ul_y, y_rot, y_resolution ) = hyObj.transform
+    
+        new_x_resolution =      x_resolution * np.cos(rot_angle)
+        new_x_rot =       (-1)* x_resolution * np.sin(rot_angle)
+        new_y_rot =             y_resolution * np.sin(rot_angle)
+        new_y_resolution =      y_resolution * np.cos(rot_angle)
+
+        # update to new transform
+        return (ul_x, new_x_resolution, new_x_rot, ul_y, new_y_rot, new_y_resolution)
+        
+    # return old transform
+    return hyObj.transform
+             
+             
+             
 def openENVI(srcFile):
     """Load and parse ENVI image header into a HyTools data object
     
@@ -59,6 +90,7 @@ def openENVI(srcFile):
     gdalFile = gdal.Open(hyObj.file_name)
     hyObj.projection =gdalFile.GetProjection()
     hyObj.transform = gdalFile.GetGeoTransform()
+    hyObj.transform = update_geotransform(hyObj) # in case older version of GDAL cannot recognize rotation angle 
         
     if header_dict["interleave"] == 'bip':    
         hyObj.shape = (hyObj.lines, hyObj.columns, hyObj.bands)
@@ -134,12 +166,15 @@ def openHDF(srcFile, structure = "NEON", no_data = -9999,load_obs = False):
     hyObj.projection = metadata['Coordinate_System']['Coordinate_System_String'].value.decode("utf-8")
     hyObj.map_info = metadata['Coordinate_System']['Map_Info'].value.decode("utf-8").split(',')
     hyObj.transform = (float(hyObj.map_info [3]),float(hyObj.map_info [1]),0,float(hyObj.map_info [4]),0,-float(hyObj.map_info [2]))
+    
+    hyObj.transform = update_geotransform(hyObj)
+
     hyObj.fwhm =  metadata['Spectral_Data']['FWHM'].value
     hyObj.wavelengths = metadata['Spectral_Data']['Wavelength'].value.astype(int)
     
     #If wavelengths units are not specified guess
     try:
-        hyObj.wavelength_units = metadata['Spectral_Data']['Wavelength'].attrs['Units']
+        hyObj.wavelength_units = metadata['Spectral_Data']['Wavelength'].attrs['Units'].decode("utf-8")
     except:
         if hyObj.wavelengths.min() >100:
             hyObj.wavelength_units = "nanometers"

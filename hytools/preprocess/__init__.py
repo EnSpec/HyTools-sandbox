@@ -5,3 +5,5 @@ to spectra.
 
 from .vector_norm import *
 from .resampling import *
+
+from .mnft import *
