@@ -62,6 +62,7 @@ def get_neighbor(hyObj, point_coord_df, n_neighbor, uid):
   '''
   
   ul_x, new_x_resolution, new_x_rot, ul_y, new_y_rot, new_y_resolution = hyObj.transform
+
   transform_matrix = np.array([[new_x_resolution, new_x_rot],[new_y_rot, new_y_resolution]])
 
 
@@ -78,27 +79,29 @@ def get_neighbor(hyObj, point_coord_df, n_neighbor, uid):
 
     temp_df = pd.DataFrame([[row[uid]+'_0',row[uid],img_loc_array[order,0],img_loc_array[order, 1]]], columns=['new_uid', uid,'img_col','img_row'])
 
-    if n_neighbor== 4:
-      neighbor_array = [[row[uid]+'_1',row[uid],img_loc_array[order,0],  img_loc_array[order, 1]-1],
-                        [row[uid]+'_2',row[uid],img_loc_array[order,0]-1,img_loc_array[order, 1]  ],
-                        [row[uid]+'_3',row[uid],img_loc_array[order,0]+1,img_loc_array[order, 1]  ],
-                        [row[uid]+'_4',row[uid],img_loc_array[order,0],  img_loc_array[order, 1]+1]
-                       ]
-      neighbor_df = pd.DataFrame(neighbor_array, columns=['new_uid', uid,'img_col','img_row'])
-      temp_df = temp_df.append(neighbor_df,ignore_index=True)
+    if n_neighbor>0:
+    
+        if n_neighbor== 4:
+          neighbor_array = [[row[uid]+'_1',row[uid],img_loc_array[order,0],  img_loc_array[order, 1]-1],
+                            [row[uid]+'_2',row[uid],img_loc_array[order,0]-1,img_loc_array[order, 1]  ],
+                            [row[uid]+'_3',row[uid],img_loc_array[order,0]+1,img_loc_array[order, 1]  ],
+                            [row[uid]+'_4',row[uid],img_loc_array[order,0],  img_loc_array[order, 1]+1]
+                           ]
+          neighbor_df = pd.DataFrame(neighbor_array, columns=['new_uid', uid,'img_col','img_row'])
+          temp_df = temp_df.append(neighbor_df,ignore_index=True)
 
-    if n_neighbor== 8:
-      neighbor_array = [[row[uid]+'_1',row[uid],img_loc_array[order,0],  img_loc_array[order, 1]-1],
-                        [row[uid]+'_2',row[uid],img_loc_array[order,0]-1,img_loc_array[order, 1]  ],
-                        [row[uid]+'_3',row[uid],img_loc_array[order,0]+1,img_loc_array[order, 1]  ],
-                        [row[uid]+'_4',row[uid],img_loc_array[order,0],  img_loc_array[order, 1]+1],
-                        [row[uid]+'_5',row[uid],img_loc_array[order,0]-1,img_loc_array[order, 1]-1],
-                        [row[uid]+'_6',row[uid],img_loc_array[order,0]+1,img_loc_array[order, 1]-1],
-                        [row[uid]+'_7',row[uid],img_loc_array[order,0]-1,img_loc_array[order, 1]+1],
-                        [row[uid]+'_8',row[uid],img_loc_array[order,0]+1,img_loc_array[order, 1]+1]
-                       ]
-      neighbor_df = pd.DataFrame(neighbor_array, columns=['new_uid', uid,'img_col','img_row'])
-      temp_df = temp_df.append(neighbor_df,ignore_index=True)
+        if n_neighbor== 8:
+          neighbor_array = [[row[uid]+'_1',row[uid],img_loc_array[order,0],  img_loc_array[order, 1]-1],
+                            [row[uid]+'_2',row[uid],img_loc_array[order,0]-1,img_loc_array[order, 1]  ],
+                            [row[uid]+'_3',row[uid],img_loc_array[order,0]+1,img_loc_array[order, 1]  ],
+                            [row[uid]+'_4',row[uid],img_loc_array[order,0],  img_loc_array[order, 1]+1],
+                            [row[uid]+'_5',row[uid],img_loc_array[order,0]-1,img_loc_array[order, 1]-1],
+                            [row[uid]+'_6',row[uid],img_loc_array[order,0]+1,img_loc_array[order, 1]-1],
+                            [row[uid]+'_7',row[uid],img_loc_array[order,0]-1,img_loc_array[order, 1]+1],
+                            [row[uid]+'_8',row[uid],img_loc_array[order,0]+1,img_loc_array[order, 1]+1]
+                           ]
+          neighbor_df = pd.DataFrame(neighbor_array, columns=['new_uid', uid,'img_col','img_row'])
+          temp_df = temp_df.append(neighbor_df,ignore_index=True)
 
     
     return_df = return_df.append(temp_df,ignore_index=True)

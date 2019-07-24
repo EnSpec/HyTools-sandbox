@@ -29,14 +29,19 @@ def update_geotransform(hyObj):
 
       if not rot_angle ==0:
         (ul_x, x_resolution, x_rot, ul_y, y_rot, y_resolution ) = hyObj.transform
-    
-        new_x_resolution =      x_resolution * np.cos(rot_angle)
-        new_x_rot =       (-1)* x_resolution * np.sin(rot_angle)
-        new_y_rot =             y_resolution * np.sin(rot_angle)
-        new_y_resolution =      y_resolution * np.cos(rot_angle)
 
-        # update to new transform
-        return (ul_x, new_x_resolution, new_x_rot, ul_y, new_y_rot, new_y_resolution)
+        # if older version of GDAL is used, geotransform does not reflect the rotation , [ulx, res_x, 0, uly, 0, res_y]
+        # if newer version of GDAL is used, geotransform reflects the rotation, nothing needs to be modified
+        if (x_rot==0.0) and (y_rot==0):
+        # for older version
+    
+            new_x_resolution =      x_resolution * np.cos(rot_angle)
+            new_x_rot =       (-1)* x_resolution * np.sin(rot_angle)
+            new_y_rot =             y_resolution * np.sin(rot_angle)
+            new_y_resolution =      y_resolution * np.cos(rot_angle)
+
+            # update to new transform
+            return (ul_x, new_x_resolution, new_x_rot, ul_y, new_y_rot, new_y_resolution)
         
     # return old transform
     return hyObj.transform
