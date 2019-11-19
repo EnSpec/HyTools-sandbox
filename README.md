@@ -34,15 +34,11 @@ column = hyObj.get_column(1)
 line = hyObj.get_line(234)
 chunk = hyObj.get_chunk(x1,x2,y1,y2)
 
-# Easy writing to new file
+# Create a writer object to write to new file
+writer = ht.file_io.writeENVI('output_envi.bin',hyObj.header_dict)
 
 #Creater iterator object to cycle though image
 iterator = raw.iterate(by = 'line')
-
-output_name ='output_envi.bin'
-
-# Create a writer object to write to new file
-writer = ht.file_io.writeENVI(output_name,hyObj.header_dict)
 
 # Cycle line by line, read from original data
 while not iterator.complete:  
