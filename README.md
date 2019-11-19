@@ -10,12 +10,12 @@ MNF transformation.
 We have also created a series of command line tools which string together the processing functions and
 provide a more streamlined workflow for processing images.
 
-# Dependencies
+## Dependencies
 - numpy
 - h5py
 - gdal
 
-# Basic usage
+## Basic usage
 ```python
 import hytools as ht
 
@@ -52,13 +52,12 @@ while not iterator.complete:
    #Write line to file
    writer.write_line(radiance,iterator.current_line)
 	
-   if iterator.complete:
-      writer.close()  
+writer.close()  
 ```
 
-# Examples
+## Examples
 
-## BRDF Correction
+### BRDF Correction
 The BRDF correction module consists of a series of tools for removing brightness gradients caused
 by variation in solar and viewing geometry. The module uses the combination of the Ross and Li
 kernels to model the volumetric, geometric and isometric scattering surfaces and applies a multiplicative
@@ -66,7 +65,7 @@ correction to remove brightness gradients.
 
 ![Before and after BRDF correction](examples/brdf_before_after.png) 
 
-## Topographic Correction
+### Topographic Correction
 The topographic correction module uses the Sun-Canopy-Sensor (SCS+C) method developed by [Soenen *et al.* 2005](https://ieeexplore.ieee.org/document/1499030) to remove shadows caused by variation in topography.
 
 ![Topographic correction](examples/topo_correct.gif) 
