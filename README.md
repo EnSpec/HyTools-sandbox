@@ -1,4 +1,4 @@
-i# HyTools
+# HyTools
 
 HyTools is a python library for working with imaging spectroscopy data, with a focus on terrestrial scenes. 
 At it's core it consists of a series of functions for reading and writing ENVI-formatted images in addition to 
