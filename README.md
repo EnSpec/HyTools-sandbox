@@ -39,7 +39,7 @@ chunk = hyObj.get_chunk(x1,x2,y1,y2)
 writer = ht.file_io.writeENVI('output_envi.bin',hyObj.header_dict)
 
 #Create an iterator object to cycle though image
-iterator = raw.iterate(by = 'line')
+iterator = hyObj.iterate(by = 'line')
 
 # Cycle line by line, read from original data
 while not iterator.complete:  
