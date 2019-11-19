@@ -16,7 +16,7 @@ provide a more streamlined workflow for processing images.
 - gdal
 
 # Basic usage
-'''python
+```python
 import hytools as ht
 
 hyObj = ht.openENVI('envi_file.bin')
@@ -35,7 +35,7 @@ band = hyObj.get_band(10)
 column = hyObj.get_column
 line = hyObj.get_line
 chunk = hyObj.get_chunk(x1,x2,y1,y2)
-'''
+```
 
 # Examples
 
