@@ -19,8 +19,9 @@ provide a more streamlined workflow for processing images.
 ```python
 import hytools as ht
 
+#Read an ENVI file
 hyObj = ht.openENVI('envi_file.bin')
-#Loads image to a numpy memmap
+#Map image data to numpy memmap object
 hyObj.load_data()
 
 #Calculate NDVI, retrieves closest wavelength to input lambda in nm
