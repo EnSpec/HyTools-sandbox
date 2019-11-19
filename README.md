@@ -24,17 +24,39 @@ hyObj = ht.openENVI('envi_file.bin')
 hyObj.load_data()
 
 #Calculate NDVI, retrieves closest wavelength to input lambda in nm
-
 ir = hyObj.get_wave(900)
 red = hyObj.get_wave(660)
 ndvi = (ir-red)/(ir+red)
 
 #Other options for retrieving data
-
 band = hyObj.get_band(10)
-column = hyObj.get_column
-line = hyObj.get_line
+column = hyObj.get_column(1)
+line = hyObj.get_line(234)
 chunk = hyObj.get_chunk(x1,x2,y1,y2)
+
+# Easy writing to new file
+
+#Creater iterator object to cycle though image
+iterator = raw.iterate(by = 'line')
+
+output_name ='output_envi.bin'
+
+# Create a writer object to write to new file
+writer = ht.file_io.writeENVI(output_name,hyObj.header_dict)
+
+# Cycle line by line, read from original data
+while not iterator.complete:  
+   #Read next line
+   line = iterator.read_next() 
+
+   #Do some calculations.......
+   radiance = line * gain + offset
+
+   #Write line to file
+   writer.write_line(radiance,iterator.current_line)
+	
+   if iterator.complete:
+      writer.close()  
 ```
 
 # Examples
