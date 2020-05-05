@@ -222,7 +222,7 @@ def parse_ENVI_header(hdrFile):
       
     while line :
         if "=" in line:
-            key,value = line.split("=",1)
+            key,value = line.rstrip().split("=",1)
             # Add field not in ENVI default list
             if key.strip() not in fieldDict.keys():
                 fieldDict[key.strip()] = "str"
@@ -233,7 +233,10 @@ def parse_ENVI_header(hdrFile):
                 while "}" not in line:
                     line = headerFile.readline()
                     value+=line
-            if valType == "list_float":
+    
+            if '{}' in value: 
+                value = np.nan
+            elif valType == "list_float":
                 value= np.array([float(x) for x in value.translate(str.maketrans("\n{}","   ")).split(",")])
             elif valType == "list_int":
                 value= np.array([int(x) for x in value.translate(str.maketrans("\n{}","   ")).split(",")])
