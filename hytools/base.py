@@ -227,11 +227,12 @@ class HyTools(object):
         
         if self.file_type  == "ENVI":
             self.data = np.memmap(self.file_name,dtype = self.dtype, mode=mode, shape = self.shape,offset=offset)
-            
-            if self.byte_order == 1:
-                self.data = self.data.byteswap()
-                self.byte_order = 0
-                self.header_dict['byte order'] = 0
+
+# Needs testing            
+#            if self.byte_order == 1:
+#                self.data = self.data.byteswap()
+#                self.byte_order = 0
+#                self.header_dict['byte order'] = 0
                 
         elif self.file_type  == "HDF":
             self.hdfObj = h5py.File(self.file_name,'r')
