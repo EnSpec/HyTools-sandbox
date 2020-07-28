@@ -2,6 +2,7 @@ from .file_io import *
 import numpy as np,os,h5py
 from collections import Counter
 # ENVI datatype conversion dictionary
+
 dtypeDict = {1:np.uint8,
              2:np.int16,
              3:np.int32,
@@ -47,6 +48,8 @@ def openENVI(srcFile):
     hyObj.dtype = dtypeDict[header_dict["data type"]]
     hyObj.no_data = header_dict['data ignore value']
     hyObj.map_info = header_dict['map info']
+    hyObj.byte_order = header_dict['byte order']
+    hyObj.header_dict =  header_dict 
 
     hyObj.file_type = "ENVI"
     hyObj.file_name = srcFile
@@ -54,8 +57,8 @@ def openENVI(srcFile):
     if type(header_dict['bbl']) == np.ndarray:
         hyObj.bad_bands = np.array([x==1 for x in header_dict['bbl']])
     
-    
     #Load image using GDAL to get projection information
+    #TODO: parse without gdal
     gdalFile = gdal.Open(hyObj.file_name)
     hyObj.projection =gdalFile.GetProjection()
     hyObj.transform = gdalFile.GetGeoTransform()
@@ -96,11 +99,7 @@ def openENVI(srcFile):
         hyObj.no_data = counts[max(counts.keys())]
         hyObj.close_data()
         
-    hyObj.header_dict =  header_dict 
-    
-    
-    
-    
+  
     del header_dict
     return hyObj    
         
@@ -161,7 +160,7 @@ def openHDF(srcFile, structure = "NEON", no_data = -9999,load_obs = False):
         hyObj.sensor_zn = np.radians(metadata['to-sensor_Zenith_Angle'][:,:])
         hyObj.sensor_az = np.radians(metadata['to-sensor_Azimuth_Angle'][:,:])
         hyObj.slope = np.radians(metadata['Ancillary_Imagery']['Slope'].value)
-        hyObj.azimuth =  np.radians(metadata['Ancillary_Imagery']['Aspect'].value)
+        hyObj.aspect =  np.radians(metadata['Ancillary_Imagery']['Aspect'].value)
         
     hdfObj.close()
     return hyObj
@@ -228,11 +227,17 @@ class HyTools(object):
         
         if self.file_type  == "ENVI":
             self.data = np.memmap(self.file_name,dtype = self.dtype, mode=mode, shape = self.shape,offset=offset)
+            
+            if self.byte_order == 1:
+                self.data = self.data.byteswap()
+                self.byte_order = 0
+                self.header_dict['byte order'] = 0
+                
         elif self.file_type  == "HDF":
             self.hdfObj = h5py.File(self.file_name,'r')
             base_key = list(self.hdfObj.keys())[0]
             self.data = self.hdfObj[base_key]["Reflectance"]["Reflectance_Data"] 
-        self.mask = np.ones((self.lines, self.columns), dtype=bool) & (self.get_band(0) != self.no_data)
+        #self.mask = np.ones((self.lines, self.columns), dtype=bool) & (self.get_band(0) != self.no_data)
                 
     def close_data(self):
         """Close data object.
@@ -433,7 +438,7 @@ class HyTools(object):
             self.solar_az = np.radians(observables.get_band(3))
             self.solar_zn = np.radians(observables.get_band(4))
             self.slope = np.radians(observables.get_band(6))
-            self.azimuth = np.radians(observables.get_band(7))
+            self.aspect = np.radians(observables.get_band(7))
             observables.close_data()
                 
                 
