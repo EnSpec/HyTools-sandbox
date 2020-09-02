@@ -263,7 +263,12 @@ def main():
                     if args.topo:
  
                         topomask_b = topomask & band_msk
-                        topo_coeff= generate_topo_coeff_band(band,topomask_b & terrain_msk,cos_i)
+                        
+                        if np.count_nonzero(topomask_b & terrain_msk) > MIN_SAMPLE_COUNT_TOPO: 
+                          topo_coeff= generate_topo_coeff_band(band,topomask_b & terrain_msk,cos_i)
+                        else:
+                          topo_coeff= FLAT_COEFF_C
+                          
                         topo_coeffs['c'].append(topo_coeff)
 
                     # Gernerate BRDF correction coefficients
@@ -281,6 +286,10 @@ def main():
                               
                             band_msk_new = (band> REFL_MIN_THRESHOLD) & (band< REFL_MAX_THRESHOLD)  
                             
+                            if np.count_nonzero(brdfmask[ibin,:,:] & band_msk & k_finite & band_msk_new) < MIN_SAMPLE_COUNT:
+                              brdf_mask_stat[ibin] = DIAGNO_NAN_OUTPUT
+                              continue
+                              
                             fVol,fGeo,fIso =  generate_brdf_coeff_band(band,brdfmask[ibin,:,:] & band_msk & k_finite & band_msk_new ,k_vol,k_geom)
                             brdf_coeffs_List[ibin]['fVol'].append(fVol)
                             brdf_coeffs_List[ibin]['fGeo'].append(fGeo)
@@ -524,6 +533,7 @@ def main():
                         if brdf_mask_stat[ibin]<MIN_SAMPLE_COUNT or np.count_nonzero(temp_mask)< MIN_SAMPLE_COUNT:
                           r_squared_array[range(ibin,total_bin*(total_image+1),total_bin),w+3]= DIAGNO_NAN_OUTPUT  #0.0
                           rmse_array[range(ibin,total_bin*(total_image+1),total_bin),w+3]= DIAGNO_NAN_OUTPUT
+                          brdf_mask_stat[ibin] = brdf_mask_stat[ibin] + DIAGNO_NAN_OUTPUT
                           continue
                           
                         fVol,fGeo,fIso = generate_brdf_coeff_band(wave_samples, temp_mask & ndvi_mask_dict[ibin]  ,sample_k_vol,sample_k_geom)
