@@ -32,7 +32,7 @@ north_min =  north_max -   ((north_max-north.min())//30 * 30)-30
 
 #Create map info string
 resolution = 30
-map_info_string = ['UTM', 1, 1, east_min, north_max,resolution,30,16, 'N', 'WGS-84' , 'units=Meters']
+map_info_string = ['UTM', 1, 1, east_min, north_max,resolution,resolution,16, 'N', 'WGS-84' , 'units=Meters']
 
 image_shape = (int((north_max-north_min)/resolution),int((east_max-east_min)/resolution))
 int_north,int_east = np.indices(image_shape)
