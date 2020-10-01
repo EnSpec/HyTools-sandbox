@@ -1,15 +1,14 @@
 import pandas as pd, numpy as np
 import matplotlib.pyplot as plt,os
 home = os.path.expanduser("~")
-import numpy as np,os,h5py
+import h5py
 import hytools as ht
 from hytools.file_io import *
 import pyproj as proj
 from scipy.spatial import cKDTree
 
 # UNDER DEVELOPMENT!!!!
-# This script exports a PRISMA HDF file as an georeferenced ENVI file
-
+# This script exports a PRISMA HDF file as n georeferenced ENVI file
 
 # Load hdf file
 srcFile = "%s/Desktop/PRS_L1_STD_OFFL_20200911170127_20200911170131_0001.he5" % home
@@ -35,14 +34,14 @@ north_min =  north_max -   ((north_max-north.min())//30 * 30)-30
 resolution = 30
 map_info_string = ['UTM', 1, 1, east_min, north_max,resolution,30,16, 'N', 'WGS-84' , 'units=Meters']
 
-image_shape = (int((north_max-north_min)/int_res),int((east_max-east_min)/int_res))
+image_shape = (int((north_max-north_min)/resolution),int((east_max-east_min)/resolution))
 int_north,int_east = np.indices(image_shape)
-int_east = (int_east*int_res + east_min).flatten()
+int_east = (int_east*resolution + east_min).flatten()
 int_north = (north_max-int_north*resolution).flatten()
 int_north= np.expand_dims(int_north,axis=1)
 int_east= np.expand_dims(int_east,axis=1)
 
-#Georeference VNIR
+#Create spatial index
 easting = east.flatten()
 northing = north.flatten()
 src_points =np.concatenate([np.expand_dims(easting,axis=1),np.expand_dims(northing,axis=1)],axis=1)
@@ -51,7 +50,7 @@ print("Tree built" )
 dst_points = np.concatenate([int_east,int_north],axis=1)             
 dists, indexes = tree.query(dst_points,k=1)
 indices_int = np.unravel_index(indexes,(swir_data.shape[0],swir_data.shape[2]))
-mask = dists.reshape(image_shape) > 30
+mask = dists.reshape(image_shape) > resolution
 print("Tree queried" )
 
 
