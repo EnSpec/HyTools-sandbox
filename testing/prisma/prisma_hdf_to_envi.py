@@ -8,7 +8,7 @@ import pyproj as proj
 from scipy.spatial import cKDTree
 
 # UNDER DEVELOPMENT!!!!
-# This script exports a PRISMA HDF file as n georeferenced ENVI file
+# This script exports a PRISMA HDF file as a georeferenced ENVI file
 
 # Load hdf file
 srcFile = "%s/Desktop/PRS_L1_STD_OFFL_20200911170127_20200911170131_0001.he5" % home
