@@ -95,10 +95,10 @@ def check_wave_match(hyObj, dst_wave_list):
     return {'flag':True, 'index':match_index_list}        
 
 # from r2 csv file    
-def get_sample_size(csv_file):
+def get_sample_size(csv_file, total_bin):
   if os.path.exists(csv_file):
     mid_pnt, n = np.loadtxt(csv_file, delimiter=',', usecols=(0,2), unpack=True,skiprows=1)
-    return n
+    return n[:total_bin]
   else:
     print("Cannot open '{}' for sample size, use equal weight in each bin. ".format(csv_file))
     return None
@@ -298,7 +298,7 @@ def main():
                 n_old_bin = np.count_nonzero(old_bin)
                 
                 if args.smooth=='W':
-                  sample_size = get_sample_size(args.brdf+'_brdf_coeffs_r2.csv')
+                  sample_size = get_sample_size(args.brdf+'_brdf_coeffs_r2.csv', total_bin)
                   if sample_size is not None:
                     #wight_thres = np.percentile(sample_size, 50)
                     #sample_size = np.clip(sample_size, 0 , wight_thres)
