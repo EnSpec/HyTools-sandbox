@@ -4,8 +4,9 @@ home = os.path.expanduser("~")
 import hytools as ht
 from sklearn.decomposition import PCA
 from copy import copy
+
 # UNDER DEVELOPMENT!!!!
-# This scripts runs a PCA on unprojected PRISM
+# This scripts runs a PCA on PRISMA
 
 # Load PRISMA ENVI file
 radiance_file = "%s/Desktop/vnir_swir" % home
