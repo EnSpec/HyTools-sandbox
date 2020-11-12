@@ -230,11 +230,16 @@ def cld_mask(hyObj, bkgMask,shdBand,band_cld_ind01,band_cld_ind02, val_ignore, h
 
   rBand=np.random.randn(dims_y,dims_x)
   thres=3
-  rand_count=len(rBand[(rBand>thres)  & (bkgMask>0) & (wrtArr[:,:,0]>0)])
+  if nbb>1:
+    #good_data_mask = (rBand>thres)  & (bkgMask>0) & (wrtArr[:,:,0]>0) & (wrtArr[:,:,1]>0)
+    good_data_mask = (rBand>thres)  & (bkgMask>0) & (np.sum(wrtArr>0,axis=2)==nbb)
+  else:
+    good_data_mask = (rBand>thres)  & (bkgMask>0) & (wrtArr[:,:,0]>0)
+  rand_count=len(rBand[good_data_mask])
   print(rand_count)
 
-  y_ind=np.where((rBand>thres) & (bkgMask>0) & (wrtArr[:,:,0]>0))[0]
-  x_ind=np.where((rBand>thres) & (bkgMask>0) & (wrtArr[:,:,0]>0))[1]
+  y_ind=np.where(good_data_mask)[0]
+  x_ind=np.where(good_data_mask)[1]
 
   indata=np.zeros((rand_count,nbb),wrtArr.dtype)
   
@@ -368,7 +373,7 @@ def hi_lo_msk(hyObj, hi_thres=0.8, lo_thres = 0.3):
 
     # detect hi-albedo targets   
     cldBand = cld_mask(hyObj, bkgMask,shdBand,band_cld_ind01,band_cld_ind02, val_ignore, hi_thres)
-
+    
     allBand=(shdBand*bkgMask*cldBand).astype(np.float16)  #
     allBand=sig.convolve(allBand,kernel, mode = 'same', method='direct')  #mean filter
     allBand[allBand < 0.7]=0
