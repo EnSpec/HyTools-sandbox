@@ -455,14 +455,14 @@ def main():
               if args.smooth=='I':  
 
                 for ibin in range(n_old_bin):
-                  if brdf_coeffs_List[ibin] is None:
+                  if brdf_coeffs_List[outside_list[ibin]] is None:
                     continue
                   else:
                     veg_mask = brdfmask[ibin,line_start:line_end,col_start:col_end][:,:,np.newaxis]
                     
-                    new_k_vol +=  brdf_coeffs_List[ibin]['fVol'] * veg_mask
-                    new_k_geom += brdf_coeffs_List[ibin]['fGeo'] * veg_mask
-                    new_k_iso += brdf_coeffs_List[ibin]['fIso'] * veg_mask
+                    new_k_vol +=  brdf_coeffs_List[outside_list[ibin]]['fVol'] * veg_mask
+                    new_k_geom += brdf_coeffs_List[outside_list[ibin]]['fGeo'] * veg_mask
+                    new_k_iso += brdf_coeffs_List[outside_list[ibin]]['fIso'] * veg_mask
                 
                 veg_mask = brdfmask[n_old_bin,line_start:line_end,col_start:col_end][:,:,np.newaxis]
                 ndvi_sub = ndvi[line_start:line_end,col_start:col_end]

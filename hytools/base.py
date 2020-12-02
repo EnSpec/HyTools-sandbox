@@ -175,7 +175,7 @@ def openHDF(srcFile, structure = "NEON", no_data = -9999,load_obs = False):
     hyObj.transform = update_geotransform(hyObj)
 
     hyObj.fwhm =  metadata['Spectral_Data']['FWHM'].value
-    hyObj.wavelengths = metadata['Spectral_Data']['Wavelength'].value.astype(int)
+    hyObj.wavelengths = metadata['Spectral_Data']['Wavelength'].value  #.astype(int)
     
     #If wavelengths units are not specified guess
     try:
