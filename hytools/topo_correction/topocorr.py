@@ -1,6 +1,9 @@
 from ..file_io import *
 import pandas as pd, sys
 import numpy as np
+from scipy.optimize import nnls, least_squares
+
+#import matplotlib.pyplot as plt
 
 """
 This module contains functions to apply a topographic correction (SCS+C)
@@ -17,6 +20,12 @@ TOPO correction consists of the following steps:
     3. apply C-Correction value to the image
 """
 
+def linearfun(coeffs, x_cos_i ,  y_refl):
+  '''
+  Linear function of cos_i-refl model
+  '''
+  return coeffs[1]+coeffs[0]*x_cos_i-y_refl
+
 def calc_cosine_i(solar_zn, solar_az, aspect ,slope):
   """
    All angles are in radians
@@ -26,7 +35,7 @@ def calc_cosine_i(solar_zn, solar_az, aspect ,slope):
 
   return cosine_i
 
-def generate_topo_coeff_band(band,mask,cos_i):
+def generate_topo_coeff_band(band,mask,cos_i, non_negative=False):
     '''Return the topographic correction coefficients for the input band.
     
     Parameters
@@ -35,8 +44,7 @@ def generate_topo_coeff_band(band,mask,cos_i):
                 Image band
     mask:       m x n np.array
                 Binary image mask
-    k_vol:      m x n np.array
-                Cosine i image
+    non_negative : flag for non-negative least squared regression, force positive slope and intercept
     Returns
     -------
     C : float
@@ -51,8 +59,24 @@ def generate_topo_coeff_band(band,mask,cos_i):
     X = np.concatenate([cos_i,np.ones(cos_i.shape)],axis=1)
     y = band[mask]
     
-    # Eq 7. Soenen et al., IEEE TGARS 2005
-    slope, intercept = np.linalg.lstsq(X, y)[0].flatten()
+    #plt.plot(cos_i,y,'.',alpha=0.1)
+    #plt.hexbin(cos_i.flatten(),y.flatten(),gridsize=100, cmap='inferno',mincnt=10,)
+    #plt.show()
+    
+
+    #print(cos_i.shape, cos_i.flatten().shape, y.shape,y.flatten().shape)
+    
+    if non_negative:
+        slope, intercept = nnls(X, y)[0].flatten()
+        
+        #initialize
+        #loss_func= 'soft_l1'
+        #reg_coeffs = np.array([0.1,0.1])
+        #result_optimize = least_squares(linearfun, reg_coeffs, loss=loss_func, f_scale=0.1,args=(cos_i.flatten(),y))
+        #slope, intercept = result_optimize.x
+    else:
+        # Eq 7. Soenen et al., IEEE TGARS 2005
+        slope, intercept = np.linalg.lstsq(X, y)[0].flatten()
     # Eq 8. Soenen et al., IEEE TGARS 2005
     C= intercept/slope
 
@@ -60,7 +84,7 @@ def generate_topo_coeff_band(band,mask,cos_i):
     if not np.isfinite(C):
       C = 100000.0
       
-    return C
+    return C,slope, intercept
 
 def generate_topo_coeffs_img(hyObj,cos_i = None):
     """
