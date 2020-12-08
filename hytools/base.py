@@ -134,7 +134,7 @@ def openHDF(srcFile, structure = "NEON", no_data = -9999,load_obs = False):
     hyObj.map_info = metadata['Coordinate_System']['Map_Info'].value.decode("utf-8").split(',')
     hyObj.transform = (float(hyObj.map_info [3]),float(hyObj.map_info [1]),0,float(hyObj.map_info [4]),0,-float(hyObj.map_info [2]))
     hyObj.fwhm =  metadata['Spectral_Data']['FWHM'].value
-    hyObj.wavelengths = metadata['Spectral_Data']['Wavelength'].value.astype(int)
+    hyObj.wavelengths = metadata['Spectral_Data']['Wavelength'].value
     
     #If wavelengths units are not specified guess
     try:
