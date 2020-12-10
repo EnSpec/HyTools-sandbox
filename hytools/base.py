@@ -2,6 +2,7 @@ from .file_io import *
 import numpy as np,os,h5py
 from collections import Counter
 # ENVI datatype conversion dictionary
+
 dtypeDict = {1:np.uint8,
              2:np.int16,
              3:np.int32,
@@ -175,7 +176,7 @@ def openHDF(srcFile, structure = "NEON", no_data = -9999,load_obs = False):
     hyObj.transform = update_geotransform(hyObj)
 
     hyObj.fwhm =  metadata['Spectral_Data']['FWHM'].value
-    hyObj.wavelengths = metadata['Spectral_Data']['Wavelength'].value  #.astype(int)
+    hyObj.wavelengths = metadata['Spectral_Data']['Wavelength'].value
     
     #If wavelengths units are not specified guess
     try:
@@ -272,7 +273,7 @@ class HyTools(object):
             self.hdfObj = h5py.File(self.file_name,'r')
             base_key = list(self.hdfObj.keys())[0]
             self.data = self.hdfObj[base_key]["Reflectance"]["Reflectance_Data"] 
-        self.mask = np.ones((self.lines, self.columns), dtype=bool) & (self.get_band(0) != self.no_data)
+        #self.mask = np.ones((self.lines, self.columns), dtype=bool) & (self.get_band(0) != self.no_data)
                 
     def close_data(self):
         """Close data object.

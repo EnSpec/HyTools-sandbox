@@ -74,7 +74,7 @@ class writeENVI(object):
             self.data[:,column,:]  = dataArray
         elif self.interleave == "bil":
             self.data[:,:,column] = dataArray     
-        elif self.enviIter.interleave == "bsq":
+        elif self.interleave == "bsq":
             self.data[:,:,column] = dataArray
                     
     def write_band(self,dataArray,band):
