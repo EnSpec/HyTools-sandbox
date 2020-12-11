@@ -13,6 +13,42 @@ dtypeDict = {1:np.uint8,
              14:np.int64,
              15:np.uint64}
 
+             
+def update_geotransform(hyObj):
+
+    map_info = hyObj.map_info
+
+    #update transform based on rotation angle, if no rotation, nothing is done 
+    rot_angle = map_info[-1].split('rotation=')
+    
+    # no rotation term in map_info if length is 1; if rotation exists, length is 2 
+    if len(rot_angle)==2:
+      rot_angle = float(rot_angle[-1].strip())
+
+      # add minus sign and covert to radians
+      rot_angle = - np.radians( rot_angle)
+
+      if not rot_angle ==0:
+        (ul_x, x_resolution, x_rot, ul_y, y_rot, y_resolution ) = hyObj.transform
+
+        # if older version of GDAL is used, geotransform does not reflect the rotation , [ulx, res_x, 0, uly, 0, res_y]
+        # if newer version of GDAL is used, geotransform reflects the rotation, nothing needs to be modified
+        if (x_rot==0.0) and (y_rot==0):
+        # for older version
+    
+            new_x_resolution =      x_resolution * np.cos(rot_angle)
+            new_x_rot =       (-1)* x_resolution * np.sin(rot_angle)
+            new_y_rot =             y_resolution * np.sin(rot_angle)
+            new_y_resolution =      y_resolution * np.cos(rot_angle)
+
+            # update to new transform
+            return (ul_x, new_x_resolution, new_x_rot, ul_y, new_y_rot, new_y_resolution)
+        
+    # return old transform
+    return hyObj.transform
+             
+             
+             
 def openENVI(srcFile):
     """Load and parse ENVI image header into a HyTools data object
     
@@ -48,8 +84,6 @@ def openENVI(srcFile):
     hyObj.dtype = dtypeDict[header_dict["data type"]]
     hyObj.no_data = header_dict['data ignore value']
     hyObj.map_info = header_dict['map info']
-    hyObj.byte_order = header_dict['byte order']
-    hyObj.header_dict =  header_dict 
 
     hyObj.file_type = "ENVI"
     hyObj.file_name = srcFile
@@ -57,11 +91,12 @@ def openENVI(srcFile):
     if type(header_dict['bbl']) == np.ndarray:
         hyObj.bad_bands = np.array([x==1 for x in header_dict['bbl']])
     
+    
     #Load image using GDAL to get projection information
-    #TODO: parse without gdal
     gdalFile = gdal.Open(hyObj.file_name)
     hyObj.projection =gdalFile.GetProjection()
     hyObj.transform = gdalFile.GetGeoTransform()
+    hyObj.transform = update_geotransform(hyObj) # in case older version of GDAL cannot recognize rotation angle 
         
     if header_dict["interleave"] == 'bip':    
         hyObj.shape = (hyObj.lines, hyObj.columns, hyObj.bands)
@@ -99,7 +134,11 @@ def openENVI(srcFile):
         hyObj.no_data = counts[max(counts.keys())]
         hyObj.close_data()
         
-  
+    hyObj.header_dict =  header_dict 
+    
+    
+    
+    
     del header_dict
     return hyObj    
         
@@ -133,12 +172,15 @@ def openHDF(srcFile, structure = "NEON", no_data = -9999,load_obs = False):
     hyObj.projection = metadata['Coordinate_System']['Coordinate_System_String'].value.decode("utf-8")
     hyObj.map_info = metadata['Coordinate_System']['Map_Info'].value.decode("utf-8").split(',')
     hyObj.transform = (float(hyObj.map_info [3]),float(hyObj.map_info [1]),0,float(hyObj.map_info [4]),0,-float(hyObj.map_info [2]))
+    
+    hyObj.transform = update_geotransform(hyObj)
+
     hyObj.fwhm =  metadata['Spectral_Data']['FWHM'].value
     hyObj.wavelengths = metadata['Spectral_Data']['Wavelength'].value
     
     #If wavelengths units are not specified guess
     try:
-        hyObj.wavelength_units = metadata['Spectral_Data']['Wavelength'].attrs['Units']
+        hyObj.wavelength_units = metadata['Spectral_Data']['Wavelength'].attrs['Units'].decode("utf-8")
     except:
         if hyObj.wavelengths.min() >100:
             hyObj.wavelength_units = "nanometers"
@@ -227,13 +269,6 @@ class HyTools(object):
         
         if self.file_type  == "ENVI":
             self.data = np.memmap(self.file_name,dtype = self.dtype, mode=mode, shape = self.shape,offset=offset)
-
-# Needs testing            
-#            if self.byte_order == 1:
-#                self.data = self.data.byteswap()
-#                self.byte_order = 0
-#                self.header_dict['byte order'] = 0
-                
         elif self.file_type  == "HDF":
             self.hdfObj = h5py.File(self.file_name,'r')
             base_key = list(self.hdfObj.keys())[0]
