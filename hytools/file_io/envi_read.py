@@ -123,7 +123,7 @@ def envi_read_column(dataArray,column,interleave):
         columnSubset = dataArray[:,column,:] 
     elif interleave == "bil":
         columnSubset = dataArray[:,:,column]     
-    elif enviIter.interleave == "bsq":
+    elif interleave == "bsq":
        columnSubset =  dataArray[:,:,column]
         
     return columnSubset 
@@ -233,7 +233,7 @@ def parse_ENVI_header(hdrFile):
                 while "}" not in line:
                     line = headerFile.readline()
                     value+=line
-    
+
             if '{}' in value: 
                 value = np.nan
             elif valType == "list_float":
