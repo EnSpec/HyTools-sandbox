@@ -202,7 +202,7 @@ def openHDF(srcFile, structure = "NEON", no_data = -9999,load_obs = False):
         hyObj.sensor_zn = np.radians(metadata['to-sensor_Zenith_Angle'][:,:])
         hyObj.sensor_az = np.radians(metadata['to-sensor_Azimuth_Angle'][:,:])
         hyObj.slope = np.radians(metadata['Ancillary_Imagery']['Slope'].value)
-        hyObj.azimuth =  np.radians(metadata['Ancillary_Imagery']['Aspect'].value)
+        hyObj.aspect =  np.radians(metadata['Ancillary_Imagery']['Aspect'].value)
         
     hdfObj.close()
     return hyObj
@@ -474,7 +474,7 @@ class HyTools(object):
             self.solar_az = np.radians(observables.get_band(3))
             self.solar_zn = np.radians(observables.get_band(4))
             self.slope = np.radians(observables.get_band(6))
-            self.azimuth = np.radians(observables.get_band(7))
+            self.aspect = np.radians(observables.get_band(7))
             observables.close_data()
                 
                 
