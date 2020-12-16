@@ -81,7 +81,7 @@ BRDF_VEG_lower_bound = 0.25
 
 # Cutting boundary percentiles for dyanmic NDVI Bins
 DYN_NDVI_BIN_LOW_PERC = 10
-DYN_NDVI_BIN_HIGH_PERC = 90
+DYN_NDVI_BIN_HIGH_PERC = 95
 
 ###########################################
 
@@ -448,7 +448,7 @@ def main():
             if args.dynamicbin:
                 total_bin = args.dynamicbin
                 perc_range = DYN_NDVI_BIN_HIGH_PERC - DYN_NDVI_BIN_LOW_PERC + 1
-                ndvi_break_dyn_bin = np.percentile(ndvi[ndvi > 0], np.arange(DYN_NDVI_BIN_LOW_PERC, DYN_NDVI_BIN_HIGH_PERC + 1, perc_range // (total_bin - 2)))
+                ndvi_break_dyn_bin = np.percentile(ndvi[ndvi > 0], np.arange(DYN_NDVI_BIN_LOW_PERC, DYN_NDVI_BIN_HIGH_PERC + 1, perc_range / (total_bin - 1)))
                 ndvi_thres = sorted([NDVI_BIN_MIN_THRESHOLD] + ndvi_break_dyn_bin.tolist() + [NDVI_BIN_MAX_THRESHOLD])
 
             else:
@@ -749,14 +749,14 @@ def main():
             np.savetxt("%s%s_lat_sza.csv" % (args.od, args.pref), csv_group_center_info, header="image_name,uniq_name,uniq_name_short,LON,LAT,solar_zn_rad,solar_zn_deg", delimiter=',', fmt='%s', comments='')
 
             if not ndvi_thres_complete:
-                ndvi_break_dyn_bin = np.percentile(sample_ndvi[sample_ndvi > 0], np.arange(DYN_NDVI_BIN_LOW_PERC, DYN_NDVI_BIN_HIGH_PERC + 1, perc_range // (total_bin - 2)))
+                ndvi_break_dyn_bin = np.percentile(sample_ndvi[sample_ndvi > 0], np.arange(DYN_NDVI_BIN_LOW_PERC, DYN_NDVI_BIN_HIGH_PERC + 1, perc_range / (total_bin - 1)))
 
                 ndvi_thres = sorted([NDVI_BIN_MIN_THRESHOLD] + ndvi_break_dyn_bin.tolist() + [NDVI_BIN_MAX_THRESHOLD])
                 ndvi_thres = sorted(list(set(ndvi_thres)))  # remove duplicates
                 total_bin = len(ndvi_thres) - 1
 
             for ibin in range(total_bin):
-                brdf_coeffs_List[ibin]['flight_box_avg_sza'] = csv_group_center_info[0, -1]
+                brdf_coeffs_List[ibin]['flight_box_avg_sza'] = float(csv_group_center_info[0, -1])
                 # print('last',csv_group_center_info[0,-1])
 
                 brdf_coeffs_List[ibin]['ndvi_lower_bound'] = ndvi_thres[ibin]
