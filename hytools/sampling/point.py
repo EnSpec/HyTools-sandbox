@@ -5,7 +5,10 @@ import pandas as pd
 
 import numpy as np
 
-import gdal, osr
+try :
+  import osr, gdal
+except:
+  from osgeo import gdal, osr
 
 from .extract_point_spec import *
 

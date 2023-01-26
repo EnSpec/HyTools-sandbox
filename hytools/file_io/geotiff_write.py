@@ -1,4 +1,9 @@
-import gdal,numpy as np
+import numpy as np
+
+try :
+  import gdal
+except:
+  from osgeo import gdal
 
 def array_to_geotiff(array,hyObj,dstFile):
     """
