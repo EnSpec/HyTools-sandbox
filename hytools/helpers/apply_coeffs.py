@@ -1,8 +1,11 @@
-import numpy as np,gdal
+import numpy as np
 from ..file_io import *
 import pandas as pd
 
-
+try :
+  import gdal
+except:
+  from osgeo import gdal
 
 def column_retype(column_name):
     """Remap wavelength column names to float"""
