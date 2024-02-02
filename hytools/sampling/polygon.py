@@ -73,7 +73,7 @@ def rasterize_polygon(hyObj,polygon_fn, key_id):
     nodata_val=255
   else:
     if (FeatureCount>255 and FeatureCount < 32767):
-      target_ds = gdal.GetDriverByName('MEM').Create('', ds_cols, ds_rows, 1, gdal.GDT_Int16)
+      target_ds = gdal.GetDriverByName('MEM').Create('', hyObj.columns, hyObj.lines, 1, gdal.GDT_Int16)
       nodata_val=-9999
     else:    # >32767
       target_ds = gdal.GetDriverByName('MEM').Create('', hyObj.columns, hyObj.lines, 1, gdal.GDT_Int32)
