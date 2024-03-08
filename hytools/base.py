@@ -197,12 +197,12 @@ def openHDF(srcFile, structure = "NEON", no_data = -9999,load_obs = False):
  
     # Load observables to memory
     if load_obs: 
-        hyObj.solar_zn = np.ones((hyObj.lines, hyObj.columns)) * np.radians(metadata['Logs']['Solar_Zenith_Angle'].value)
-        hyObj.solar_az = np.ones((hyObj.lines, hyObj.columns)) * np.radians(metadata['Logs']['Solar_Azimuth_Angle'].value)
+        hyObj.solar_zn = np.ones((hyObj.lines, hyObj.columns)) * np.radians(metadata['Logs']['Solar_Zenith_Angle'][()])
+        hyObj.solar_az = np.ones((hyObj.lines, hyObj.columns)) * np.radians(metadata['Logs']['Solar_Azimuth_Angle'][()])
         hyObj.sensor_zn = np.radians(metadata['to-sensor_Zenith_Angle'][:,:])
         hyObj.sensor_az = np.radians(metadata['to-sensor_Azimuth_Angle'][:,:])
-        hyObj.slope = np.radians(metadata['Ancillary_Imagery']['Slope'].value)
-        hyObj.aspect =  np.radians(metadata['Ancillary_Imagery']['Aspect'].value)
+        hyObj.slope = np.radians(metadata['Ancillary_Imagery']['Slope'][()])
+        hyObj.aspect =  np.radians(metadata['Ancillary_Imagery']['Aspect'][()])
         
     hdfObj.close()
     return hyObj
