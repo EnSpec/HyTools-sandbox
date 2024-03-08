@@ -169,14 +169,14 @@ def openHDF(srcFile, structure = "NEON", no_data = -9999,load_obs = False):
     base_key = list(hdfObj.keys())[0]
     metadata = hdfObj[base_key]["Reflectance"]["Metadata"]
     data = hdfObj[base_key]["Reflectance"]["Reflectance_Data"] 
-    hyObj.projection = metadata['Coordinate_System']['Coordinate_System_String'].value.decode("utf-8")
-    hyObj.map_info = metadata['Coordinate_System']['Map_Info'].value.decode("utf-8").split(',')
+    hyObj.projection = metadata['Coordinate_System']['Coordinate_System_String'][()].decode("utf-8")
+    hyObj.map_info = metadata['Coordinate_System']['Map_Info'][()].decode("utf-8").split(',')
     hyObj.transform = (float(hyObj.map_info [3]),float(hyObj.map_info [1]),0,float(hyObj.map_info [4]),0,-float(hyObj.map_info [2]))
     
     hyObj.transform = update_geotransform(hyObj)
 
-    hyObj.fwhm =  metadata['Spectral_Data']['FWHM'].value
-    hyObj.wavelengths = metadata['Spectral_Data']['Wavelength'].value
+    hyObj.fwhm =  metadata['Spectral_Data']['FWHM'][()]
+    hyObj.wavelengths = metadata['Spectral_Data']['Wavelength'][()]
     
     #If wavelengths units are not specified guess
     try:
