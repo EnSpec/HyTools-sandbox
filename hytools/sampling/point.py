@@ -74,7 +74,7 @@ def get_neighbor(hyObj, point_coord_df, n_neighbor, uid):
   img_loc_array = np.linalg.solve(transform_matrix, xy_coord_array)
 
   #img_loc_array = np.rint(img_loc_array).astype(np.int).transpose()   # round to nearest integer
-  img_loc_array = img_loc_array.astype(np.int).transpose()
+  img_loc_array = img_loc_array.astype(np.int32).transpose()
 
   return_df = pd.DataFrame(columns=['new_uid',uid,'img_col','img_row'])
 

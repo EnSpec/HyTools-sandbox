@@ -31,8 +31,8 @@ def add_df_lat_lon(point_coord_neighbor_df, hyObj, imgsrs2latlon, offset=0.5):
 def extract_from_point(hyObj, point_coord_neighbor_df):
 
   
-  img_row = point_coord_neighbor_df['img_row'].values.astype(np.int)
-  img_col = point_coord_neighbor_df['img_col'].values.astype(np.int)
+  img_row = point_coord_neighbor_df['img_row'].values.astype(np.int32)
+  img_col = point_coord_neighbor_df['img_col'].values.astype(np.int32)
 
   if hyObj.file_type == "ENVI":
     #print(hyObj.file_type)
@@ -48,7 +48,7 @@ def extract_from_point(hyObj, point_coord_neighbor_df):
 
 
   elif hyObj.file_type == "HDF":
-    spec_data =np.zeros((len(img_row),hyObj.bands),np.float)
+    spec_data =np.zeros((len(img_row),hyObj.bands),float)
 
     for index in range(len(img_row)):
       spec_data[index,:] = hyObj.data[img_row[index],img_col[index],:]
