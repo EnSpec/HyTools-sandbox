@@ -134,9 +134,11 @@ def copy_hdr(inimg, outimg):
 def copy_binary(inimg, outimg):
     copyfile(inimg, outimg)
     
-def update_slope_aspect(slope, aspect, mask):
+def update_slope_aspect(slope, aspect, mask, flag_both):
         #mask = slope>no_data_value
-        slope[mask] = 90 -  slope[mask]
+        if flag_both:
+          slope[mask] = 90 -  slope[mask]
+
         aspect[mask] = ((aspect[mask] - 90) % 360)
         #aspect[aspect > 180] = aspect[aspect > 180] - 360
     
@@ -152,13 +154,20 @@ def main(argv):
     parser = argparse.ArgumentParser(description='This code is to correct offsets for slope, aspect, cos_i in older version of AVIRIS-NG obs_ort image')
     parser.add_argument('-i','--infile',type=str, help='Input obs_ort image',required=True)
     parser.add_argument('-o','--outfile',  type=str, help='Output obs_ort image', required=True)
+    parser.add_argument('--aspect_only',   help='Do not correct slope, only correct aspect if set true', required=False, action="store_true")
 
     args = parser.parse_args()
 
 
     inimg=args.infile 
     outimg=args.outfile
+    if args.aspect_only:
+      flag_both=False
+    else:
+      flag_both=True
 
+    #print(flag_both)
+    #return
     copy_hdr(inimg, outimg)
     copy_binary(inimg, outimg)
   
@@ -174,10 +183,12 @@ def main(argv):
         Aspect = np.copy(image_mammap[:,:,7])
         
         mask = Slope>no_data_value
-        update_slope_aspect(Slope, Aspect, mask)
+        update_slope_aspect(Slope, Aspect, mask, flag_both)
         cos_i = cal_cosine_i(Slope, Aspect,  to_sun_zenith, to_sun_azimuth, mask, no_data_value)        
         
-        image_mammap[:,:,6] = Slope
+        if flag_both:
+          image_mammap[:,:,6] = Slope
+
         image_mammap[:,:,7] = Aspect
         image_mammap[:,:,8] = cos_i        
 
@@ -189,10 +200,12 @@ def main(argv):
         Aspect = np.copy(image_mammap[:,7,:])
         
         mask = Slope>no_data_value
-        update_slope_aspect(Slope, Aspect, mask)
+        update_slope_aspect(Slope, Aspect, mask, flag_both)
         cos_i = cal_cosine_i(Slope, Aspect,  to_sun_zenith, to_sun_azimuth, mask, no_data_value)
 
-        image_mammap[:,6,:] = Slope
+        if flag_both:
+          image_mammap[:,6,:] = Slope
+
         image_mammap[:,7,:] = Aspect
         image_mammap[:,8,:] = cos_i
         
@@ -205,10 +218,12 @@ def main(argv):
         Aspect = np.copy(image_mammap[7,:,:])
         
         mask = Slope>no_data_value
-        update_slope_aspect(Slope, Aspect, mask)
+        update_slope_aspect(Slope, Aspect, mask, flag_both)
         cos_i = cal_cosine_i(Slope, Aspect,  to_sun_zenith, to_sun_azimuth, mask, no_data_value)
-        
-        image_mammap[6,:,:] = Slope
+
+        if flag_both:        
+          image_mammap[6,:,:] = Slope
+
         image_mammap[7,:,:] = Aspect
         image_mammap[8,:,:] = cos_i
         
