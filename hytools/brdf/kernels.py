@@ -94,8 +94,8 @@ def generate_volume_kernel(solar_az,solar_zn,sensor_az,sensor_zn, ross):
     phase = np.arccos(np.cos(solar_zn)*np.cos(sensor_zn) + np.sin(solar_zn)*np.sin(sensor_zn)*  np.cos(relative_az))
     
     if ross == 'thick':
-        # Eq 13. Wanner et al. JGRA 1995
-        k_vol = ((pi/2 - phase)*np.cos(phase) + np.sin(phase))/ (np.cos(sensor_zn)*np.cos(solar_zn)) - pi/4
+        # Eq 7. Wanner et al. JGRA 1995
+        k_vol = ((pi/2 - phase)*np.cos(phase) + np.sin(phase))/ (np.cos(sensor_zn)+np.cos(solar_zn)) - pi/4
     elif ross == 'thin':
         # Eq 13. Wanner et al. JGRA 1995
         k_vol = ((pi/2 - phase)*np.cos(phase) + np.sin(phase))/ (np.cos(sensor_zn)*np.cos(solar_zn)) - pi/2
