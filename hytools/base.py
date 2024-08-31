@@ -126,11 +126,23 @@ def openENVI(srcFile):
     if np.isnan(hyObj.no_data):  
         print("No data value specified, guessing.")
         hyObj.load_data()
-        ul = hyObj.data[0,0,0]
-        ur = hyObj.data[0,-1,0]
-        ll = hyObj.data[-1,0,0]
-        lr = hyObj.data[-1,-1,0]
-        counts = {v: k for k, v in Counter([ul,ur,ll,lr]).items()}
+        if header_dict["interleave"] == 'bip':
+            up_l = hyObj.data[0,0,0]
+            up_r = hyObj.data[0,-1,0]
+            low_l = hyObj.data[-1,0,0]
+            low_r = hyObj.data[-1,-1,0]
+        elif header_dict["interleave"] == 'bil':
+            up_l = hyObj.data[0,0,0]
+            up_r = hyObj.data[0,0,-1]
+            low_l = hyObj.data[-1,0,0]
+            low_r = hyObj.data[-1,0,-1]
+        elif header_dict["interleave"] == 'bsq':
+            up_l = hyObj.data[0,0,0]
+            up_r = hyObj.data[0,0,-1]
+            low_l = hyObj.data[0,-1,0]
+            low_r = hyObj.data[0,-1,-1]
+
+        counts = {v: k for k, v in Counter([up_l,up_r,low_l,low_r]).items()}
         hyObj.no_data = counts[max(counts.keys())]
         hyObj.close_data()
         
